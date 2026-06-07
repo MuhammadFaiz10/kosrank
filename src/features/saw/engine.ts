@@ -241,3 +241,95 @@ export async function calculateAndUpdateSAW() {
 
   return ranked.map((item) => ({ id: item.kos.id, score: item.score }));
 }
+
+export async function getSAWCalculationDetails() {
+  const criteriaList = await prisma.criteria.findMany({
+    orderBy: { code: "asc" },
+  });
+  const kosList = await prisma.kos.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
+    include: {
+      facilities: {
+        include: { facility: true },
+      },
+    },
+  });
+
+  // map weight lookup
+  const weights: Record<string, number> = {};
+  const attributes: Record<string, "COST" | "BENEFIT"> = {};
+  for (const c of criteriaList) {
+    weights[c.code] = c.weight;
+    attributes[c.code] = c.attribute;
+  }
+
+  const scoreMatrix: Record<string, Record<string, number>> = {};
+  const targetLat = UBSI_MARGONDA_COORDS.lat;
+  const targetLng = UBSI_MARGONDA_COORDS.lng;
+
+  for (const kos of kosList) {
+    scoreMatrix[kos.id] = {};
+    const distMeters = calculateDistance(kos.latitude, kos.longitude, targetLat, targetLng);
+    const distKm = distMeters / 1000;
+    const isSeeded = SEEDED_KOS_SCORES[kos.name];
+    const useSeeded = isSeeded; // use seeded for default base comparison if available
+
+    scoreMatrix[kos.id]["C1"] = useSeeded ? isSeeded.C1 : getC1Score(kos.price);
+    scoreMatrix[kos.id]["C2"] = useSeeded ? isSeeded.C2 : getC2Score(distKm);
+    scoreMatrix[kos.id]["C3"] = useSeeded ? isSeeded.C3 : getC3Score(parseRoomArea(kos.roomSize));
+    const facNames = kos.facilities.map((f) => f.facility.name);
+    scoreMatrix[kos.id]["C4"] = useSeeded ? isSeeded.C4 : getC4Score(facNames);
+    scoreMatrix[kos.id]["C5"] = useSeeded ? isSeeded.C5 : getC5Score(facNames);
+    scoreMatrix[kos.id]["C6"] = useSeeded ? isSeeded.C6 : getC6Score(kos.transit);
+  }
+
+  const normalMatrix: Record<string, Record<string, number>> = {};
+  const criteriaCodes = ["C1", "C2", "C3", "C4", "C5", "C6"];
+
+  for (const code of criteriaCodes) {
+    const values = kosList.map((k) => scoreMatrix[k.id][code] || 0);
+    const maxVal = Math.max(...values);
+    const minVal = Math.min(...values.filter((v) => v > 0));
+
+    for (const kos of kosList) {
+      if (!normalMatrix[kos.id]) normalMatrix[kos.id] = {};
+      const xij = scoreMatrix[kos.id][code] || 0;
+      const attr = attributes[code] || "BENEFIT";
+
+      if (attr === "BENEFIT" || code === "C1" || code === "C2") {
+        normalMatrix[kos.id][code] = maxVal > 0 ? xij / maxVal : 0;
+      } else {
+        normalMatrix[kos.id][code] = xij > 0 ? minVal / xij : 0;
+      }
+    }
+  }
+
+  const ranked = kosList.map((kos) => {
+    let score = 0;
+    const steps: Record<string, string> = {};
+    for (const code of criteriaCodes) {
+      const rij = normalMatrix[kos.id][code] || 0;
+      const wj = weights[code] || 0;
+      score += wj * rij;
+      steps[code] = `(${wj} × ${rij.toFixed(4)})`;
+    }
+
+    return {
+      kos,
+      score: parseFloat(score.toFixed(4)),
+      steps,
+    };
+  });
+
+  ranked.sort((a, b) => b.score - a.score);
+
+  return {
+    criteriaList,
+    kosList,
+    scoreMatrix,
+    normalMatrix,
+    weights,
+    ranked,
+  };
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Home, Settings, MapPin, LogOut, Sliders, Users } from "lucide-react";
+import { LayoutDashboard, Home, Settings, MapPin, LogOut, Sliders, Users, Calculator, Trophy } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const NAV_ITEMS = [
@@ -10,13 +10,15 @@ const NAV_ITEMS = [
   { href: "/admin/kos", label: "Semua Kos", icon: Home },
   { href: "/admin/users", label: "Pengguna", icon: Users },
   { href: "/admin/kriteria", label: "Kriteria SAW", icon: Sliders },
+  { href: "/admin/perhitungan", label: "Perhitungan SAW", icon: Calculator },
+  { href: "/admin/hasil-akhir", label: "Hasil Akhir", icon: Trophy },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 flex-shrink-0 min-h-screen bg-slate-900 text-white flex flex-col">
+    <aside className="w-60 flex-shrink-0 min-h-screen bg-slate-900 text-white flex flex-col print:hidden">
       <div className="px-5 py-5 border-b border-white/10">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
