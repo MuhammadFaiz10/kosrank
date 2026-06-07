@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role     @default(USER)
+  phone       String?
+  avatar      String?
+  createdAt   DateTime @default(now())
+
+  kos         Kos[]
+}
+
+model Kos {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String
+  price       Int
+  roomSize    String
+  latitude    Float      @default(0)
+  longitude   Float      @default(0)
+  address     String
+  genderType  GenderType
+  campus      String
+  phone       String?
+  transit     String     @default("Ojek online/kendaraan pribadi")
+  isActive    Boolean    @default(true)
+  finalScore  Float?
+  ranking     Int?
+  createdAt   DateTime   @default(now())
+
+  ownerId     String?
+  owner       User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  images      KosImage[]
+  facilities  KosFacility[]
+}
+
+model KosImage {
+  id        String   @id @default(cuid())
+  kosId     String
+  url       String
+  createdAt DateTime @default(now())
+
+  kos       Kos      @relation(fields: [kosId], references: [id], onDelete: Cascade)
+}
+
+model Facility {
+  id            String        @id @default(cuid())
+  name          String
+  icon          String?
+  type          FacilityType
+
+  kosFacilities KosFacility[]
+}
+
+model KosFacility {
+  id         String   @id @default(cuid())
+  kosId      String
+  facilityId String
+
+  kos        Kos      @relation(fields: [kosId], references: [id], onDelete: Cascade)
+  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+}
+
+model Criteria {
+  id          String            @id @default(cuid())
+  code        String
+  name        String
+  weight      Float
+  attribute   CriteriaAttribute
+
+  subCriteria SubCriteria[]
+}
+
+model SubCriteria {
+  id         String   @id @default(cuid())
+  criteriaId String
+  name       String
+  value      String
+  score      Int
+
+  criteria   Criteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  SUPER_ADMIN
+  SELLER
+  USER
+}
+
+enum GenderType {
+  PUTRA
+  PUTRI
+  CAMPUR
+}
+
+enum CriteriaAttribute {
+  BENEFIT
+  COST
+}
+
+enum FacilityType {
+  ROOM
+  PUBLIC
+}
