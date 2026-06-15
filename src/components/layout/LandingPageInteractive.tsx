@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, MapPin, Search, Shield, Zap, Compass, Crosshair, HelpCircle, CheckCircle } from "lucide-react";
+import { ArrowRight, MapPin, Search, Shield, Zap, Compass, Crosshair, HelpCircle, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KosCard } from "@/components/cards/KosCard";
 
@@ -29,21 +29,57 @@ interface LandingPageInteractiveProps {
 }
 
 const PRESET_LOCATIONS = [
-  { name: "BSI Margonda", lat: -6.3685, lng: 106.8335 },
+  { name: "UBSI Margonda", lat: -6.3685, lng: 106.8335 },
 ];
 
 export default function LandingPageInteractive({ initialKos, totalKos }: LandingPageInteractiveProps) {
-  const [locationName, setLocationName] = useState("BSI Margonda");
+  const [locationName, setLocationName] = useState("UBSI Margonda");
   const [coordinates, setCoordinates] = useState<{ lat?: number; lng?: number }>({});
   const [recommendations, setRecommendations] = useState<KosItem[]>(initialKos);
   const [isLoading, setIsLoading] = useState(false);
   const [gpsActive, setGpsActive] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
 
+  // Automatically trigger location detection on mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      setIsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setCoordinates({ lat: latitude, lng: longitude });
+          setGpsActive(true);
+
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16`
+            );
+            const data = await res.json();
+            if (data && data.display_name) {
+              const address = data.address;
+              const sub = address.suburb || address.village || address.neighborhood || address.city_district || "Lokasi Anda";
+              setLocationName(sub);
+            } else {
+              setLocationName("Lokasi Anda (GPS)");
+            }
+          } catch (e) {
+            setLocationName("Lokasi Anda (GPS)");
+          } finally {
+            setIsLoading(false);
+          }
+        },
+        (error) => {
+          console.warn("Geolocation automatically declined or failed:", error);
+          setIsLoading(false);
+          // Graceful fallback to initialKos (UBSI Margonda)
+        }
+      );
+    }
+  }, [initialKos]);
+
   // Fetch recommendations whenever coordinates change
   useEffect(() => {
     if (coordinates.lat === undefined || coordinates.lng === undefined) {
-      // Default to initial seeded data (Margonda)
       setRecommendations(initialKos);
       return;
     }
@@ -81,14 +117,12 @@ export default function LandingPageInteractive({ initialKos, totalKos }: Landing
         const { latitude, longitude } = position.coords;
         setCoordinates({ lat: latitude, lng: longitude });
 
-        // Get location name via Nominatim reverse-geocoding
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16`
           );
           const data = await res.json();
           if (data && data.display_name) {
-            // Simplify address name to neighborhood/city
             const address = data.address;
             const sub = address.suburb || address.village || address.neighborhood || address.city_district || "Lokasi Anda";
             setLocationName(sub);
@@ -117,199 +151,215 @@ export default function LandingPageInteractive({ initialKos, totalKos }: Landing
   };
 
   return (
-    <div className="flex flex-col">
-      {/* ─── Hero Section ─── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white border-b border-white/5 py-24 sm:py-32">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.15),transparent_70%)] pointer-events-none" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
+    <div className="flex flex-col font-sans text-[#0F1111] bg-white">
+      {/* ─── Hero Section (High-Density, Utilitarian Surface Background) ─── */}
+      <section className="bg-[#F0F2F2] border-b border-[#D5D9D9] py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1500px] mx-auto flex flex-col md:flex-row items-start justify-between gap-6">
           
-          {/* SAW Tag */}
-          <div 
-            onClick={() => setShowInfoModal(true)}
-            className="inline-flex items-center gap-2 text-xs font-semibold bg-white/5 hover:bg-white/10 transition-colors cursor-pointer backdrop-blur-md px-4 py-2 rounded-full mb-8 border border-white/10"
-          >
-            <Zap className="w-3.5 h-3.5 text-yellow-400 animate-pulse" />
-            <span>Rekomendasi Cerdas SAW</span>
-            <HelpCircle className="w-3.5 h-3.5 text-white/50 ml-1" />
+          {/* Hero text & headline */}
+          <div className="flex-1 text-left space-y-3">
+            <div 
+              onClick={() => setShowInfoModal(true)}
+              className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#007185] hover:text-[#004B57] hover:underline cursor-pointer bg-white px-2.5 py-1 rounded border border-[#D5D9D9] shadow-sm"
+            >
+              <Zap className="w-3.5 h-3.5 text-[#FF9900] fill-[#FF9900]" />
+              <span>Sistem Pendukung Keputusan SAW (Bobot Kriteria)</span>
+              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+            </div>
+
+            {/* Page Title: Source Sans 3 28px/36px, weight 700 */}
+            <h1 className="text-[28px] leading-[36px] font-bold text-[#0F1111] tracking-tight">
+              Temukan Kos Terbaik di Dekat <span className="text-[#007185] underline">{locationName}</span>
+            </h1>
+
+            {/* Body Small: Source Sans 3 13px/18px */}
+            <p className="text-[13px] leading-[18px] text-[#565959] max-w-xl">
+              Sistem rekomendasi KosRank membandingkan alternatif kos secara real-time berdasarkan kriteria harga, fasilitas, ukuran kamar, dan jarak kampus menggunakan metode Simple Additive Weighting (SAW).
+            </p>
           </div>
 
-          {/* Dynamic Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight max-w-4xl">
-            Temukan Kos Terbaik di Dekat <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400">
-              {locationName}
+          {/* Location Interactive Selector (styled as Amazon filter chips) */}
+          <div className="w-full md:w-auto bg-white border border-[#D5D9D9] p-4 rounded-lg shadow-sm flex flex-col gap-2.5 flex-shrink-0 md:min-w-[340px]">
+            <span className="text-[12px] font-bold text-[#565959] uppercase tracking-wider block">
+              Pilih Titik Acuan Rekomendasi:
             </span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Sistem kami membandingkan kos secara real-time berdasarkan harga, fasilitas, ukuran kamar, dan jarak dari posisi Anda secara objektif.
-          </p>
-
-          {/* Location Interactive Controls */}
-          <div className="w-full max-w-2xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 text-left">
-              Pilih Lokasi Acuan Rekomendasi:
-            </p>
             
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* BSI Margonda (Default) */}
+            <div className="flex flex-col gap-2">
+              {/* Preset Chip */}
               <button
-                onClick={() => handleSelectPreset({ name: "BSI Margonda", lat: -6.3685, lng: 106.8335 })}
-                className={`px-5 py-3.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 border flex-1 cursor-pointer ${
+                onClick={() => handleSelectPreset({ name: "UBSI Margonda", lat: -6.3685, lng: 106.8335 })}
+                className={`w-full flex items-center justify-between text-left p-2.5 rounded border text-[13px] transition-all cursor-pointer ${
                   !gpsActive
-                    ? "bg-primary border-primary text-white shadow-lg shadow-primary/25"
-                    : "bg-slate-800/40 border-white/5 hover:bg-slate-800/80 text-slate-300"
+                    ? "border-[#007185] bg-[#F3FCFF] text-[#007185] font-semibold"
+                    : "border-[#D5D9D9] bg-white text-[#0F1111] hover:bg-[#F7FAFA]"
                 }`}
               >
-                <MapPin className="w-4 h-4 text-white" />
-                <span>BSI Margonda (Default)</span>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-[#FF9900]" />
+                  <span>UBSI Margonda (Default)</span>
+                </div>
+                {!gpsActive && <span className="text-[10px] text-[#007185] font-bold">Aktif</span>}
               </button>
 
-              {/* GPS Button */}
+              {/* GPS Chip */}
               <button
                 onClick={handleUseGPS}
-                className={`px-5 py-3.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 border flex-1 cursor-pointer ${
+                className={`w-full flex items-center justify-between text-left p-2.5 rounded border text-[13px] transition-all cursor-pointer ${
                   gpsActive
-                    ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                    : "bg-slate-800/40 border-white/5 hover:bg-slate-800/80 text-slate-300"
+                    ? "border-[#007185] bg-[#F3FCFF] text-[#007185] font-semibold"
+                    : "border-[#D5D9D9] bg-white text-[#0F1111] hover:bg-[#F7FAFA]"
                 }`}
               >
-                <Compass className={`w-4 h-4 ${isLoading && gpsActive ? "animate-spin" : ""}`} />
-                {gpsActive ? "📍 GPS Terdeteksi" : "Gunakan Lokasi GPS Saya"}
+                <div className="flex items-center gap-2">
+                  <Compass className={`w-4 h-4 text-[#FF9900] ${isLoading && gpsActive ? "animate-spin" : ""}`} />
+                  <span>Gunakan Lokasi GPS Saya</span>
+                </div>
+                {gpsActive && <span className="text-[10px] text-[#007185] font-bold">Aktif</span>}
               </button>
             </div>
           </div>
+
         </div>
       </section>
 
-      {/* ─── Top Recommendations Section ─── */}
-      <section id="recommendations" className="py-16 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-            <div>
-              <p className="text-xs font-bold text-primary mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 fill-primary" />
-                Rekomendasi Teratas
-              </p>
-              <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                Pilihan Kos untuk Anda di {locationName}
-              </h2>
-              <p className="text-slate-500 mt-1 text-sm">
-                Diurutkan secara cerdas berdasarkan kecocokan atribut terbaik.
-              </p>
+      {/* ─── Top Recommendations Section (Utilitarian Grid) ─── */}
+      <section id="recommendations" className="py-8 px-4 sm:px-6 lg:px-8 max-w-[1500px] mx-auto w-full">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4 border-b border-[#D5D9D9] pb-4">
+          <div>
+            <div className="flex items-center gap-1.5 text-[12px] font-bold text-[#CC5500] uppercase tracking-wider">
+              <Zap className="w-4 h-4 fill-[#FF9900] text-[#FF9900]" />
+              Rekomendasi Teratas
             </div>
-            
-            <Link href="/explore">
-              <Button variant="outline" className="rounded-xl border-slate-200 hover:border-slate-300 text-slate-700 bg-white">
-                Lihat Semua Kos <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+            {/* Section Title: Source Sans 3 21px/28px, weight 700 */}
+            <h2 className="text-[21px] leading-[28px] font-bold text-[#0F1111] tracking-tight mt-1">
+              Hasil Rekomendasi SAW di {locationName}
+            </h2>
+            <p className="text-[13px] text-[#565959] mt-0.5">
+              Diurutkan secara objektif berdasarkan skor kecocokan tertinggi.
+            </p>
           </div>
-
-          {/* Loading States & Grid */}
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-pulse h-[360px]" />
-              ))}
-            </div>
-          ) : recommendations.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendations.slice(0, 3).map((item, idx) => (
-                <KosCard 
-                  key={item.id} 
-                  kos={{
-                    id: item.id,
-                    name: item.name,
-                    slug: item.slug,
-                    price: item.price,
-                    roomSize: item.roomSize,
-                    address: item.address,
-                    genderType: item.genderType,
-                    campus: item.campus,
-                    finalScore: item.score,
-                    ranking: idx + 1
-                  }}
-                  distanceMeters={item.distanceMeters}
-                  dynamicScore={item.score}
-                  dynamicRank={idx + 1}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm text-slate-500">
-              <MapPin className="w-12 h-12 mx-auto mb-4 opacity-30 text-slate-400" />
-              <p className="font-medium">Belum ada kos terdaftar di dekat lokasi ini.</p>
-              <p className="text-xs text-slate-400 mt-1">Coba gunakan preset lokasi lain atau hubungi admin.</p>
-            </div>
-          )}
+          
+          <Link href="/explore">
+            {/* Outlined Amazon Button */}
+            <button className="bg-white hover:bg-[#F7FAFA] border border-[#D5D9D9] text-[#0F1111] rounded text-[13px] h-9 px-4 shadow-sm inline-flex items-center gap-1 cursor-pointer font-sans">
+              Lihat Semua Kos ({totalKos}) <ArrowRight className="w-4 h-4 text-[#565959]" />
+            </button>
+          </Link>
         </div>
-      </section>
 
-      {/* ─── Core Features ─── */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Mengapa Menggunakan Rekomendasi Lokasi?</h2>
-            <p className="text-slate-500 mt-2 max-w-xl mx-auto text-sm">Sistem pendukung keputusan kami menghitung jarak presisi secara real-time</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: Crosshair, title: "Deteksi GPS Akurat", desc: "Jarak kos dihitung tepat dari posisi GPS Anda saat ini." },
-              { icon: Zap, title: "Simple Additive Weighting", desc: "Mengkombinasikan seluruh atribut penting untuk menyaring kos terbaik." },
-              { icon: Shield, title: "Keputusan Objektif", desc: "Menghindari bias iklan berbayar dengan memprioritaskan kos yang benar-benar pas." },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="p-6 rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                  <Icon className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">{title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
-              </div>
+        {/* Loading States & Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-lg border border-[#D5D9D9] p-4 animate-pulse h-[360px]" />
             ))}
           </div>
+        ) : recommendations.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+            {recommendations.slice(0, 3).map((item, idx) => (
+              <KosCard 
+                key={item.id} 
+                kos={{
+                  id: item.id,
+                  name: item.name,
+                  slug: item.slug,
+                  price: item.price,
+                  roomSize: item.roomSize,
+                  address: item.address,
+                  genderType: item.genderType,
+                  campus: item.campus,
+                  finalScore: item.score,
+                  ranking: idx + 1,
+                  image: item.image
+                }}
+                distanceMeters={item.distanceMeters}
+                dynamicScore={item.score}
+                dynamicRank={idx + 1}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-[#F0F2F2] rounded-lg border border-[#D5D9D9] text-slate-500">
+            <MapPin className="w-12 h-12 mx-auto mb-3 opacity-30 text-slate-400" />
+            <p className="font-bold text-[14px]">Belum ada kos terdaftar di dekat lokasi ini.</p>
+            <p className="text-xs text-[#565959] mt-1">Coba gunakan preset lokasi lain atau hubungi admin.</p>
+          </div>
+        )}
+      </section>
+
+      {/* ─── Informative Features Section ─── */}
+      <section className="py-8 px-4 sm:px-6 lg:px-8 max-w-[1500px] mx-auto w-full border-t border-[#D5D9D9] mt-4 mb-8">
+        <div className="text-left mb-6">
+          <h2 className="text-[21px] font-bold text-[#0F1111]">Metodologi Pendukung Keputusan</h2>
+          <p className="text-[13px] text-[#565959] mt-0.5">Bagaimana KosRank menghitung rekomendasi tempat tinggal Anda secara adil</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { icon: Crosshair, title: "Jarak GPS Real-time", desc: "Sistem mengukur koordinat lintang/bujur Anda ke kos secara presisi (Cost)." },
+            { icon: Zap, title: "Simple Additive Weighting", desc: "Membagi bobot kriteria benefit dan cost untuk mendapatkan nilai alternatif total." },
+            { icon: Shield, title: "Skor Objektif Transparan", desc: "Rekomendasi murni berdasarkan kecocokan data fasilitas dan harga, bebas sponsor bias." },
+          ].map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="p-4 rounded-lg border border-[#D5D9D9] bg-white hover:shadow-sm transition-all text-left">
+              <div className="w-10 h-10 bg-[#F0F2F2] rounded flex items-center justify-center mb-3">
+                <Icon className="w-5 h-5 text-[#007185]" />
+              </div>
+              <h3 className="font-bold text-[14px] text-[#0F1111] mb-1">{title}</h3>
+              <p className="text-[13px] text-[#565959] leading-relaxed">{desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ─── SAW Criteria Info Modal ─── */}
+      {/* ─── SAW Criteria Info Modal (Level 2 Elevation Shadow) ─── */}
       {showInfoModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative">
-            <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-              Sistem Rekomendasi Cerdas SAW
+        <div className="fixed inset-0 z-50 bg-[#0F1111]/50 flex items-center justify-center p-4 backdrop-blur-[1px]">
+          <div className="bg-white rounded-lg max-w-md w-full p-5 shadow-[0_0_6px_rgba(15,17,17,0.15)] border border-[#D5D9D9] relative text-left">
+            <button 
+              onClick={() => setShowInfoModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <h3 className="text-[18px] font-bold text-[#0F1111] mb-3.5 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-[#FF9900] fill-[#FF9900]" />
+              Pembobotan Kriteria SAW
             </h3>
-            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-              Website ini menentukan rekomendasi kos menggunakan metode **Simple Additive Weighting (SAW)**. Rekomendasi dihitung secara objektif berdasarkan bobot kriteria berikut:
+            <p className="text-[13px] text-[#565959] mb-4">
+              Website ini menyusun peringkat kos menggunakan metode **Simple Additive Weighting (SAW)**. Perhitungan didasarkan pada bobot kriteria resmi berikut:
             </p>
 
             {/* Criteria Progress */}
-            <div className="space-y-4 mb-6">
+            <div className="space-y-3 mb-5">
               {[
-                { name: "C1 Harga (Cost)", weight: 30, desc: "Harga sewa per bulan" },
-                { name: "C2 Jarak (Cost)", weight: 20, desc: "Jarak terdekat ke lokasi acuan" },
-                { name: "C3 Ukuran Ruangan (Benefit)", weight: 15, desc: "Lebar ruangan kamar tidur" },
-                { name: "C4 Fasilitas Kamar (Benefit)", weight: 15, desc: "AC, meja, lemari, kasur, kursi" },
-                { name: "C5 Fasilitas Kos (Benefit)", weight: 10, desc: "WiFi, dapur, parkir, CCTV, penjaga" },
-                { name: "C6 Akses Transportasi (Benefit)", weight: 10, desc: "Kemudahan angkutan umum/ojek" },
+                { name: "C1 Harga Sewa (Cost)", weight: 30, desc: "Harga sewa bulanan kos" },
+                { name: "C2 Jarak ke Kampus (Cost)", weight: 20, desc: "Jarak terdekat ke titik acuan" },
+                { name: "C3 Ukuran Kamar (Benefit)", weight: 15, desc: "Dimensi luas kamar tidur" },
+                { name: "C4 Fasilitas Kamar (Benefit)", weight: 15, desc: "Jumlah fasilitas kamar tidur" },
+                { name: "C5 Fasilitas Umum (Benefit)", weight: 10, desc: "Fasilitas penunjang bersama" },
+                { name: "C6 Akses Transportasi (Benefit)", weight: 10, desc: "Kemudahan angkutan & transit" },
               ].map((c) => (
                 <div key={c.name} className="space-y-1">
-                  <div className="flex justify-between text-xs font-semibold text-slate-700">
+                  <div className="flex justify-between text-[12px] font-bold text-[#0F1111]">
                     <span>{c.name}</span>
                     <span>{c.weight}%</span>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: `${c.weight}%` }} />
+                  <div className="h-2 bg-[#F0F2F2] rounded overflow-hidden">
+                    <div className="h-full bg-[#FF9900] rounded" style={{ width: `${c.weight}%` }} />
                   </div>
-                  <p className="text-[11px] text-slate-400">{c.desc}</p>
+                  <p className="text-[11px] text-[#565959]">{c.desc}</p>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-100">
-              <Button onClick={() => setShowInfoModal(false)} className="rounded-xl">
+            <div className="flex justify-end pt-3 border-t border-[#D5D9D9]">
+              {/* Gold Add to Cart style button */}
+              <button 
+                onClick={() => setShowInfoModal(false)}
+                className="bg-[#FFD814] hover:bg-[#F7CA00] text-[#0F1111] border border-[#F7CA00] rounded text-[13px] font-normal h-8 px-4 shadow-sm cursor-pointer"
+              >
                 Saya Mengerti
-              </Button>
+              </button>
             </div>
           </div>
         </div>

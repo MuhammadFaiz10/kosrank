@@ -3,7 +3,6 @@ import { KosCard } from "@/components/cards/KosCard";
 import { FilterSidebar } from "@/components/forms/FilterSidebar";
 import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 interface SearchParams {
   kampus?: string;
@@ -39,7 +38,7 @@ export default async function ExplorePage({
   }
 
   const page = params.page ? parseInt(params.page) : 1;
-  const itemsPerPage = 10;
+  const itemsPerPage = 9; // Grid works better with multiples of 3
   const skip = (page - 1) * itemsPerPage;
   const take = itemsPerPage;
 
@@ -90,68 +89,77 @@ export default async function ExplorePage({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Eksplor Kos</h1>
-        <p className="text-muted-foreground mt-1">
-          Menampilkan <span className="font-semibold text-foreground">{(page - 1) * itemsPerPage + 1}-{Math.min(page * itemsPerPage, totalCount)}</span> dari <span className="font-semibold text-foreground">{totalCount}</span> tempat kos
-        </p>
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 font-sans text-left text-[#0F1111]">
+      {/* Search Header */}
+      <div className="mb-6 border-b border-[#F0F2F2] pb-4">
+        {/* Page Title: Source Sans 3 28px/36px, weight 700 */}
+        <h1 className="text-[28px] leading-[36px] font-bold text-[#0F1111] tracking-tight">
+          Eksplor Pilihan Tempat Kos
+        </h1>
+        {totalCount > 0 ? (
+          <p className="text-[13px] text-[#565959] mt-0.5">
+            Menampilkan <span className="font-bold text-[#0F1111]">{(page - 1) * itemsPerPage + 1}-{Math.min(page * itemsPerPage, totalCount)}</span> dari <span className="font-bold text-[#0F1111]">{totalCount}</span> tempat kos di Condong Catur
+          </p>
+        ) : (
+          <p className="text-[13px] text-[#565959] mt-0.5">Tidak ada tempat kos yang cocok dengan kriteria pencarian Anda.</p>
+        )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* Sidebar Filter */}
-        <aside className="w-full lg:w-72 flex-shrink-0">
+        <aside className="w-full lg:w-[260px] flex-shrink-0">
           <FilterSidebar currentParams={params} />
         </aside>
 
         {/* Kos Grid */}
-        <div className="flex-1 flex flex-col justify-between">
+        <div className="flex-grow w-full flex flex-col justify-between self-stretch">
           <div>
             {kosList.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {kosList.map((kos) => (
                   <KosCard key={kos.id} kos={kos} />
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-                <MapPin className="w-16 h-16 mb-4 opacity-20" />
-                <p className="text-lg font-medium">Tidak ada kos ditemukan</p>
-                <p className="text-sm mt-1">Coba ubah filter pencarian Anda</p>
+              <div className="flex flex-col items-center justify-center py-20 bg-[#F0F2F2] rounded-lg border border-[#D5D9D9] text-[#565959]">
+                <MapPin className="w-12 h-12 mb-3 opacity-30 text-slate-400" />
+                <p className="font-bold text-[14px] text-[#0F1111]">Tidak ada kos ditemukan</p>
+                <p className="text-xs text-[#565959] mt-0.5">Coba ubah filter kecamatan, gender, atau harga Anda.</p>
               </div>
             )}
           </div>
 
-          {/* Pagination Controls */}
+          {/* Pagination Controls (Amazon style) */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-10 pt-6 border-t border-border">
+            <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-[#F0F2F2]">
               {page > 1 ? (
                 <Link href={createPageHref(page - 1)}>
-                  <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
+                  <button className="h-[32px] px-3 border border-[#D5D9D9] bg-white rounded hover:bg-[#F7FAFA] text-[#0F1111] text-[13px] flex items-center justify-center cursor-pointer transition-colors shadow-sm font-semibold">
+                    <ChevronLeft className="h-4 w-4 mr-0.5 text-slate-600" /> Prev
+                  </button>
                 </Link>
               ) : (
-                <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl opacity-50 cursor-not-allowed" disabled>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
+                <button className="h-[32px] px-3 border border-[#D5D9D9] bg-white opacity-50 rounded text-slate-400 text-[13px] flex items-center justify-center cursor-not-allowed shadow-sm font-semibold" disabled>
+                  <ChevronLeft className="h-4 w-4 mr-0.5" /> Prev
+                </button>
               )}
 
               <div className="flex items-center gap-1.5">
                 {getPageNumbers().map((p, idx) => (
                   typeof p === "number" ? (
                     <Link key={idx} href={createPageHref(p)}>
-                      <Button
-                        variant={p === page ? "default" : "outline"}
-                        className={`h-9 w-9 rounded-xl text-sm font-medium ${
-                          p === page ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                      <button
+                        className={`h-[32px] w-[32px] rounded text-[13px] flex items-center justify-center cursor-pointer transition-colors shadow-sm ${
+                          p === page 
+                            ? "border-2 border-[#E77600] text-[#E77600] bg-white font-bold" 
+                            : "border border-[#D5D9D9] bg-white hover:bg-[#F7FAFA] text-[#0F1111]"
                         }`}
                       >
                         {p}
-                      </Button>
+                      </button>
                     </Link>
                   ) : (
-                    <span key={idx} className="px-2 text-muted-foreground text-sm font-semibold select-none">
+                    <span key={idx} className="px-1 text-slate-400 text-sm font-semibold select-none">
                       {p}
                     </span>
                   )
@@ -160,14 +168,14 @@ export default async function ExplorePage({
 
               {page < totalPages ? (
                 <Link href={createPageHref(page + 1)}>
-                  <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <button className="h-[32px] px-3 border border-[#D5D9D9] bg-white rounded hover:bg-[#F7FAFA] text-[#0F1111] text-[13px] flex items-center justify-center cursor-pointer transition-colors shadow-sm font-semibold">
+                    Next <ChevronRight className="h-4 w-4 ml-0.5 text-slate-600" />
+                  </button>
                 </Link>
               ) : (
-                <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl opacity-50 cursor-not-allowed" disabled>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                <button className="h-[32px] px-3 border border-[#D5D9D9] bg-white opacity-50 rounded text-slate-400 text-[13px] flex items-center justify-center cursor-not-allowed shadow-sm font-semibold" disabled>
+                  Next <ChevronRight className="h-4 w-4 ml-0.5" />
+                </button>
               )}
             </div>
           )}

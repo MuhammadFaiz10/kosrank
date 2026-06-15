@@ -4,6 +4,7 @@ import { PrintButton } from "@/components/ui/PrintButton";
 import { Button } from "@/components/ui/button";
 import { Trophy } from "lucide-react";
 import Link from "next/link";
+import { HasilAkhirTable } from "./HasilAkhirTable";
 
 export default async function HasilAkhirPage() {
   const { ranked } = await getSAWCalculationDetails();
@@ -75,58 +76,7 @@ export default async function HasilAkhirPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 print:p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse print:text-xs">
-              <thead className="text-xs uppercase bg-slate-50 text-slate-500 border-b border-border print:bg-slate-100 print:text-slate-700 print:border-b-2 print:border-slate-350">
-                <tr>
-                  <th className="px-6 py-4 font-bold text-center w-24 border border-border print:border-slate-300">Peringkat</th>
-                  <th className="px-6 py-4 font-bold border border-border print:border-slate-300">Nama Kos</th>
-                  <th className="px-6 py-4 font-bold border border-border print:border-slate-300">Alamat</th>
-                  <th className="px-6 py-4 font-bold border border-border print:border-slate-300">Tipe</th>
-                  <th className="px-6 py-4 font-bold text-right w-36 border border-border print:border-slate-300">Nilai Preferensi (V)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border print:divide-slate-300">
-                {ranked.map(({ kos, score }, index) => (
-                  <tr key={kos.id} className="hover:bg-slate-50/50 print:hover:bg-transparent">
-                    <td className="px-6 py-4 text-center border border-border print:border-slate-300">
-                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                        index === 0 
-                          ? "bg-amber-500 text-white" 
-                          : index === 1 
-                          ? "bg-slate-400 text-white" 
-                          : index === 2 
-                          ? "bg-amber-700 text-white" 
-                          : "bg-slate-100 text-slate-700 border border-slate-200"
-                      } print:bg-transparent print:text-slate-900 print:font-extrabold print:border-none`}>
-                        {index + 1}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-900 border border-border print:border-slate-300">
-                      {kos.name}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600 border border-border print:border-slate-300">
-                      {kos.address}
-                    </td>
-                    <td className="px-6 py-4 border border-border print:border-slate-300">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        kos.genderType === "PUTRA" 
-                          ? "bg-blue-50 text-blue-700 border border-blue-200" 
-                          : kos.genderType === "PUTRI"
-                          ? "bg-pink-50 text-pink-700 border border-pink-200"
-                          : "bg-purple-50 text-purple-700 border border-purple-200"
-                      } print:bg-transparent print:border-none print:p-0 print:text-slate-800`}>
-                        {kos.genderType === "PUTRA" ? "Putra" : kos.genderType === "PUTRI" ? "Putri" : "Campur"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right font-extrabold text-primary text-base border border-border print:border-slate-300 print:text-slate-900">
-                      {score.toFixed(4)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <HasilAkhirTable ranked={ranked} />
         </CardContent>
       </Card>
 

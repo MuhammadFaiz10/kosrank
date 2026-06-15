@@ -15,15 +15,19 @@ export function SellerSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 flex-shrink-0 min-h-screen bg-white border-r border-border flex flex-col">
-      <div className="px-5 py-5 border-b border-border">
+    <aside className="w-60 flex-shrink-0 h-screen bg-white border-r border-border flex flex-col overflow-y-auto">
+      <div className="px-5 py-4 border-b border-border flex flex-col gap-2.5">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
             <MapPin className="w-3.5 h-3.5 text-white" />
           </div>
-          Kos<span className="text-primary">Rank</span>
-          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-auto font-medium">Seller</span>
+          <span>Kos<span className="text-primary">Rank</span></span>
         </Link>
+        <div className="flex">
+          <span className="text-[10px] uppercase font-black tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-md border border-primary/20">
+            Seller Panel
+          </span>
+        </div>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">

@@ -18,15 +18,19 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 flex-shrink-0 min-h-screen bg-slate-900 text-white flex flex-col print:hidden">
-      <div className="px-5 py-5 border-b border-white/10">
+    <aside className="w-60 flex-shrink-0 h-screen bg-slate-900 text-white flex flex-col overflow-y-auto print:hidden">
+      <div className="px-5 py-4 border-b border-white/10 flex flex-col gap-2.5">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
             <MapPin className="w-3.5 h-3.5 text-white" />
           </div>
-          Kos<span className="text-blue-400">Rank</span>
-          <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full ml-auto border border-red-500/30">Super Admin</span>
+          <span>Kos<span className="text-blue-400">Rank</span></span>
         </Link>
+        <div className="flex">
+          <span className="text-[10px] uppercase font-black tracking-wider bg-red-500/10 text-red-400 px-2 py-0.5 rounded-md border border-red-500/20">
+            Super Admin Panel
+          </span>
+        </div>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1">

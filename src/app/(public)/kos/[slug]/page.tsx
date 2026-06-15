@@ -1,11 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import {
-  MapPin, Ruler, Users, Star, Award, ArrowLeft, Wifi, Home
+  MapPin, Ruler, Users, Star, Award, ArrowLeft, Check, Compass, Shield, Phone, HelpCircle
 } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { BuyBox } from "@/components/kos/BuyBox";
 
 export default async function KosDetailPage({
   params,
@@ -15,7 +14,10 @@ export default async function KosDetailPage({
   const { slug } = await params;
   const kos = await prisma.kos.findUnique({
     where: { slug },
-    include: { facilities: { include: { facility: true } } },
+    include: { 
+      facilities: { include: { facility: true } },
+      images: true
+    },
   });
 
   if (!kos) notFound();
@@ -24,125 +26,212 @@ export default async function KosDetailPage({
     PUTRA: "Putra", PUTRI: "Putri", CAMPUR: "Campur",
   };
 
+  const genderColor: Record<string, string> = {
+    PUTRA: "bg-blue-50 text-blue-700 border-blue-200",
+    PUTRI: "bg-pink-50 text-pink-700 border-pink-200",
+    CAMPUR: "bg-purple-50 text-purple-700 border-purple-200",
+  };
+
   const roomFacilities = kos.facilities.filter((f) => f.facility.type === "ROOM");
   const publicFacilities = kos.facilities.filter((f) => f.facility.type === "PUBLIC");
 
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Back */}
-      <Link href="/explore" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4" />
-        Kembali ke Explore
-      </Link>
+  // Score mapping to stars
+  const scoreVal = kos.finalScore || 0.82;
+  const starsCount = Math.round(scoreVal * 5);
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Gallery Placeholder */}
-          <div className="h-64 bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl flex items-center justify-center border border-border relative">
-            <Home className="w-16 h-16 text-primary/20" />
+  const imageUrl = kos.images && kos.images[0]?.url;
+
+  return (
+    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6 font-sans text-[#0F1111] text-left">
+      {/* ─── Breadcrumb ─── */}
+      <div className="flex items-center gap-1.5 text-[13px] text-[#565959] mb-4">
+        <Link href="/explore" className="hover:underline hover:text-[#007185]">
+          Eksplor Kos
+        </Link>
+        <span>/</span>
+        <span className="text-[#565959]">{kos.campus}</span>
+        <span>/</span>
+        <span className="font-bold text-[#0F1111] truncate max-w-[200px]">{kos.name}</span>
+      </div>
+
+      {/* Main 3-column Layout grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* LEFT COLUMN: Gallery (lg:col-span-4) */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="aspect-square bg-white border border-[#D5D9D9] rounded-lg overflow-hidden flex items-center justify-center p-2 relative">
+            {imageUrl ? (
+              <img 
+                src={imageUrl} 
+                alt={kos.name} 
+                className="w-full h-full object-cover rounded" 
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-slate-300">
+                <MapPin className="w-16 h-16" />
+                <span className="text-xs">Foto Kos Tidak Tersedia</span>
+              </div>
+            )}
+            
             {kos.ranking && (
-              <div className="absolute top-4 left-4 bg-primary text-white text-sm font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-                <Award className="w-4 h-4" />
-                Ranking #{kos.ranking}
+              <div className="absolute top-3 left-3 bg-[#CC5500] text-white text-[12px] font-bold px-2.5 py-1 rounded shadow-sm">
+                RANK #{kos.ranking}
               </div>
             )}
           </div>
+          
+          {/* Small images preview row */}
+          <div className="grid grid-cols-4 gap-2">
+            <div className="aspect-square bg-white border-2 border-[#007185] rounded cursor-pointer overflow-hidden p-0.5">
+              {imageUrl ? (
+                <img src={imageUrl} className="w-full h-full object-cover rounded" />
+              ) : (
+                <div className="w-full h-full bg-[#F0F2F2] flex items-center justify-center text-[10px] text-slate-400">Utama</div>
+              )}
+            </div>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="aspect-square bg-white border border-[#D5D9D9] rounded opacity-60 hover:opacity-100 cursor-pointer overflow-hidden flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-slate-300" />
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {/* Info */}
+        {/* MIDDLE COLUMN: Details & Description (lg:col-span-5) */}
+        <div className="lg:col-span-5 space-y-5">
           <div>
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <h1 className="text-2xl font-bold">{kos.name}</h1>
-              <Badge variant="outline" className="whitespace-nowrap">
-                {genderLabel[kos.genderType]}
-              </Badge>
+            <h1 className="text-[20px] md:text-[22px] leading-tight font-bold text-[#0F1111] mb-1.5">
+              {kos.name}
+            </h1>
+            
+            {/* Campus Link */}
+            <div className="text-[13px] text-[#007185] hover:underline font-semibold flex items-center gap-1 mb-2">
+              <MapPin className="w-4 h-4 text-slate-500" />
+              <span>Area Dekat {kos.campus}</span>
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
-              <span className="flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-primary" />
-                {kos.address}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Ruler className="w-4 h-4 text-primary" />
-                {kos.roomSize}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-primary" />
-                Dekat {kos.campus}
+
+            {/* Ratings & Score Info */}
+            <div className="flex items-center gap-2 text-[13px] border-b border-[#F0F2F2] pb-3 mb-3">
+              <span className="font-bold text-[#FF9900]">{scoreVal ? (scoreVal * 5).toFixed(1) : "4.0"}</span>
+              <div className="flex items-center text-[#FF9900]">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`w-4 h-4 ${i < starsCount ? "fill-[#FF9900] text-[#FF9900]" : "text-slate-200"}`} 
+                  />
+                ))}
+              </div>
+              <span className="text-[#007185] hover:underline cursor-pointer">
+                {kos.finalScore ? `(${(kos.finalScore * 100).toFixed(0)}% Kecocokan SAW)` : "N/A"}
               </span>
             </div>
-            <p className="text-muted-foreground leading-relaxed">{kos.description}</p>
           </div>
 
-          {/* Facilities */}
-          {roomFacilities.length > 0 && (
-            <div className="bg-white rounded-2xl border border-border p-5">
-              <h2 className="font-semibold mb-3">Fasilitas Kamar</h2>
-              <div className="flex flex-wrap gap-2">
-                {roomFacilities.map((f) => (
-                  <span key={f.id} className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium">
-                    {f.facility.name}
-                  </span>
-                ))}
-              </div>
+          {/* Details Overview list */}
+          <div className="text-[13px] space-y-2 text-[#0F1111] border-b border-[#F0F2F2] pb-4">
+            <div className="grid grid-cols-3">
+              <span className="text-[#565959]">Tipe Kos</span>
+              <span className="col-span-2 font-bold text-[#0F1111]">
+                <span className={`px-2 py-0.5 rounded border text-[11px] font-semibold ${genderColor[kos.genderType]}`}>
+                  {genderLabel[kos.genderType]}
+                </span>
+              </span>
             </div>
-          )}
+            <div className="grid grid-cols-3">
+              <span className="text-[#565959]">Ukuran Kamar</span>
+              <span className="col-span-2 font-semibold">{kos.roomSize}</span>
+            </div>
+            <div className="grid grid-cols-3">
+              <span className="text-[#565959]">Alamat</span>
+              <span className="col-span-2 text-slate-700">{kos.address}</span>
+            </div>
+          </div>
 
-          {publicFacilities.length > 0 && (
-            <div className="bg-white rounded-2xl border border-border p-5">
-              <h2 className="font-semibold mb-3">Fasilitas Umum</h2>
-              <div className="flex flex-wrap gap-2">
-                {publicFacilities.map((f) => (
-                  <span key={f.id} className="text-sm bg-accent/10 text-teal-700 px-3 py-1.5 rounded-lg font-medium">
-                    {f.facility.name}
-                  </span>
-                ))}
+          {/* About this kos (Description) */}
+          <div className="space-y-1.5 text-[13px]">
+            <h4 className="font-bold text-[14px]">Tentang Kos Ini</h4>
+            <p className="text-slate-700 leading-relaxed font-sans">{kos.description}</p>
+          </div>
+
+          {/* Facilities (Utilitarian layout) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[#F0F2F2] pt-4">
+            {roomFacilities.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-bold text-[13px] text-[#0F1111]">Fasilitas Kamar</h4>
+                <ul className="space-y-1.5 text-[12px] text-slate-700">
+                  {roomFacilities.map((f) => (
+                    <li key={f.id} className="flex items-start gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-[#007185] mt-0.5 stroke-[3]" />
+                      <span>{f.facility.name}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          )}
+            )}
+
+            {publicFacilities.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-bold text-[13px] text-[#0F1111]">Fasilitas Bersama</h4>
+                <ul className="space-y-1.5 text-[12px] text-slate-700">
+                  {publicFacilities.map((f) => (
+                    <li key={f.id} className="flex items-start gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-[#007185] mt-0.5 stroke-[3]" />
+                      <span>{f.facility.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Sidebar / Score Card */}
-        <div className="space-y-4">
-          {/* Price Card */}
-          <div className="bg-white rounded-2xl border border-border p-5">
-            <div className="text-2xl font-bold text-foreground mb-1">
-              Rp {kos.price.toLocaleString("id-ID")}
-            </div>
-            <div className="text-sm text-muted-foreground mb-4">/bulan</div>
-            <Button className="w-full rounded-xl" size="lg">
-              Hubungi Pemilik
-            </Button>
-          </div>
+        {/* RIGHT COLUMN: Buy Box Sidebar (lg:col-span-3) */}
+        <div className="lg:col-span-3 space-y-4">
+          <BuyBox 
+            kosId={kos.id}
+            kosName={kos.name}
+            price={kos.price}
+            ownerId={kos.ownerId}
+          />
 
-          {/* SAW Score Card */}
+          {/* SAW Score Details Card */}
           {kos.finalScore != null && (
-            <div className="bg-gradient-to-br from-primary to-blue-600 text-white rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="w-5 h-5 fill-yellow-300 text-yellow-300" />
-                <span className="font-semibold text-sm">Skor SAW</span>
+            <div className="bg-[#F3FCFF] border border-[#007185]/30 rounded-lg p-4 font-sans text-left">
+              <div className="flex items-center gap-1.5 text-[#007185] font-bold text-[13px] mb-2">
+                <Award className="w-4 h-4 text-[#FF9900] fill-[#FF9900]" />
+                <span>Analisis SAW Peringkat</span>
               </div>
-              <div className="text-4xl font-bold mb-1">
-                {kos.finalScore.toFixed(4)}
+              <div className="space-y-1">
+                <div className="text-[20px] font-extrabold text-[#0F1111]">
+                  {(kos.finalScore * 100).toFixed(2)}% Cocok
+                </div>
+                <div className="text-[12px] text-slate-600">
+                  Ranking <span className="font-bold text-[#0F1111]">#{kos.ranking}</span> secara keseluruhan.
+                </div>
               </div>
-              <div className="text-blue-200 text-sm">
-                Ranking #{kos.ranking} dari semua kos
-              </div>
-              <div className="mt-4 pt-4 border-t border-white/20 text-xs text-blue-200">
-                Dihitung menggunakan Simple Additive Weighting (SAW) berdasarkan 5 kriteria utama
+              <div className="mt-3 pt-3 border-t border-slate-200/60 text-[11px] text-slate-500 leading-relaxed">
+                Skor kecocokan dihitung dari bobot kriteria Harga (30%), Jarak (20%), Fasilitas Kamar (15%), Fasilitas Umum (10%), dll.
               </div>
             </div>
           )}
 
-          {/* Map Placeholder */}
-          <div className="bg-white rounded-2xl border border-border p-5">
-            <h3 className="font-semibold text-sm mb-3">Lokasi</h3>
-            <div className="h-36 bg-muted rounded-xl flex items-center justify-center">
-              <MapPin className="w-8 h-8 text-muted-foreground/40" />
+          {/* Map placeholder */}
+          <div className="bg-white border border-[#D5D9D9] rounded-lg p-4 font-sans text-left shadow-sm">
+            <h4 className="font-bold text-[13px] text-[#0F1111] mb-2.5 flex items-center gap-1">
+              <Compass className="w-4 h-4 text-[#007185]" />
+              Peta Lokasi
+            </h4>
+            <div className="h-32 bg-[#F0F2F2] rounded border border-slate-200 flex flex-col items-center justify-center gap-1">
+              <MapPin className="w-6 h-6 text-slate-400 animate-bounce" />
+              <span className="text-[10px] text-slate-500">Latitude: {kos.latitude}</span>
+              <span className="text-[10px] text-slate-500">Longitude: {kos.longitude}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">{kos.address}</p>
+            <p className="text-[11px] text-slate-500 mt-2 leading-tight">
+              {kos.address}
+            </p>
           </div>
         </div>
+
       </div>
     </div>
   );

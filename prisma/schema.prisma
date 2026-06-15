@@ -16,7 +16,11 @@ model User {
   avatar      String?
   createdAt   DateTime @default(now())
 
-  kos         Kos[]
+  kos               Kos[]
+  bookings          Booking[]
+  chatRoomsAsUser   ChatRoom[]    @relation("UserRooms")
+  chatRoomsAsSeller ChatRoom[]    @relation("SellerRooms")
+  messages          ChatMessage[]
 }
 
 model Kos {
@@ -43,6 +47,8 @@ model Kos {
 
   images      KosImage[]
   facilities  KosFacility[]
+  bookings    Booking[]
+  chatRooms   ChatRoom[]
 }
 
 model KosImage {
@@ -112,4 +118,48 @@ enum CriteriaAttribute {
 enum FacilityType {
   ROOM
   PUBLIC
+}
+
+model Booking {
+  id             String        @id @default(cuid())
+  userId         String
+  kosId          String
+  status         BookingStatus @default(PENDING)
+  startDate      DateTime      @default(now())
+  durationMonths Int           @default(1)
+  createdAt      DateTime      @default(now())
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kos            Kos           @relation(fields: [kosId], references: [id], onDelete: Cascade)
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ChatRoom {
+  id        String        @id @default(cuid())
+  userId    String
+  sellerId  String
+  kosId     String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user      User          @relation("UserRooms", fields: [userId], references: [id], onDelete: Cascade)
+  seller    User          @relation("SellerRooms", fields: [sellerId], references: [id], onDelete: Cascade)
+  kos       Kos           @relation(fields: [kosId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  senderId  String
+  text      String
+  createdAt DateTime @default(now())
+
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }
