@@ -517,10 +517,11 @@ async function calculateAndUpdateSAWInSeed(prisma: PrismaClient) {
       const xij = scoreMatrix[kos.id][code] || 0;
       const attr = attributes[code] || "BENEFIT";
 
-      if (attr === "BENEFIT" || code === "C1" || code === "C2") {
+      if (attr === "BENEFIT") {
+        // BENEFIT: nilai lebih besar = lebih baik → xij / max
         normalMatrix[kos.id][code] = maxVal > 0 ? xij / maxVal : 0;
       } else {
-        // COST
+        // COST: nilai lebih kecil = lebih baik → min / xij
         normalMatrix[kos.id][code] = xij > 0 ? minVal / xij : 0;
       }
     }
