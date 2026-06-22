@@ -243,12 +243,17 @@ export async function calculateAndUpdateSAW() {
   return ranked.map((item) => ({ id: item.kos.id, score: item.score }));
 }
 
-export async function getSAWCalculationDetails() {
+export async function getSAWCalculationDetails(kosIds?: string[]) {
   const criteriaList = await prisma.criteria.findMany({
     orderBy: { code: "asc" },
   });
+
+  const whereClause = kosIds && kosIds.length > 0
+    ? { isActive: true, id: { in: kosIds } }
+    : { isActive: true };
+
   const kosList = await prisma.kos.findMany({
-    where: { isActive: true },
+    where: whereClause,
     orderBy: { createdAt: "desc" },
     include: {
       facilities: {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Home, Settings, MapPin, LogOut, Sliders, Users, Calculator, Trophy } from "lucide-react";
+import { LayoutDashboard, Home, Settings, MapPin, LogOut, Sliders, Users, Calculator, Trophy, List } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const NAV_ITEMS = [
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/admin/kos", label: "Semua Kos", icon: Home },
   { href: "/admin/users", label: "Pengguna", icon: Users },
   { href: "/admin/kriteria", label: "Kriteria SAW", icon: Sliders },
+  { href: "/admin/sub-kriteria", label: "Sub Kriteria SAW", icon: List },
   { href: "/admin/perhitungan", label: "Perhitungan SAW", icon: Calculator },
   { href: "/admin/hasil-akhir", label: "Hasil Akhir", icon: Trophy },
 ];
@@ -35,7 +36,7 @@ export function AdminSidebar() {
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || (href !== "/admin" && pathname.startsWith(href));
+          const isActive = pathname === href || (href !== "/admin" && pathname.startsWith(href + "/") || pathname === href);
           return (
             <Link key={href} href={href} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-white/60 hover:text-white hover:bg-white/10"}`}>
               <Icon className="w-4 h-4 flex-shrink-0" />

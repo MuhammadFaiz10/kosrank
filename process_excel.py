@@ -3,19 +3,25 @@ import json
 import random
 import re
 
-# Load both excels
+import os
+
+# Load excel
 df1 = pd.read_excel('Devox.xlsx')
-df2 = pd.read_excel('Devox (1).xlsx')
 
-# Verify index-wise alignment of room names
-for i in range(len(df1)):
-    name1 = str(df1.loc[i, 'room_name']).strip()
-    name2 = str(df2.loc[i, 'room_name']).strip()
-    assert name1 == name2, f"Mismatch at index {i}: '{name1}' vs '{name2}'"
+if os.path.exists('Devox (1).xlsx'):
+    df2 = pd.read_excel('Devox (1).xlsx')
 
-# Create merged dataframe by copying df1 and adding C6 Access Transportation
-df = df1.copy()
-df['Akses Transportasi'] = df2['Akses Transportasi']
+    # Verify index-wise alignment of room names
+    for i in range(len(df1)):
+        name1 = str(df1.loc[i, 'room_name']).strip()
+        name2 = str(df2.loc[i, 'room_name']).strip()
+        assert name1 == name2, f"Mismatch at index {i}: '{name1}' vs '{name2}'"
+
+    # Create merged dataframe by copying df1 and adding C6 Access Transportation
+    df = df1.copy()
+    df['Akses Transportasi'] = df2['Akses Transportasi']
+else:
+    df = df1.copy()
 
 # Coordinates mapping for sub-districts in Depok
 # BSI Margonda is at lat: -6.3685, lng: 106.8335

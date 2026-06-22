@@ -1,13 +1,42 @@
 import { getSAWCalculationDetails } from "@/features/saw/engine";
+import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Calculator } from "lucide-react";
 import Link from "next/link";
 import { PerhitunganAccordion } from "./PerhitunganAccordion";
+import { KosSelector } from "./KosSelector";
 
-export default async function PerhitunganPage() {
-  const { criteriaList, scoreMatrix, normalMatrix, ranked } = await getSAWCalculationDetails();
+interface SearchParams {
+  kos?: string | string[];
+}
 
-  if (ranked.length === 0) {
+export default async function PerhitunganPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+
+  // Parse selected kos IDs from URL search params
+  const rawKos = params.kos;
+  const selectedKosIds: string[] = rawKos
+    ? Array.isArray(rawKos)
+      ? rawKos
+      : [rawKos]
+    : [];
+
+  // Always fetch all active kos for the selector UI
+  const allKos = await prisma.kos.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, genderType: true, price: true },
+  });
+
+  // Run SAW calculation (filtered or all)
+  const { criteriaList, scoreMatrix, normalMatrix, ranked } =
+    await getSAWCalculationDetails(selectedKosIds.length > 0 ? selectedKosIds : undefined);
+
+  if (allKos.length === 0) {
     return (
       <div className="p-8 max-w-7xl mx-auto space-y-6">
         <div>
@@ -43,12 +72,31 @@ export default async function PerhitunganPage() {
         </p>
       </div>
 
-      <PerhitunganAccordion 
-        criteriaList={criteriaList}
-        scoreMatrix={scoreMatrix}
-        normalMatrix={normalMatrix}
-        ranked={ranked}
+      {/* Kos Selector */}
+      <KosSelector
+        allKos={allKos}
+        selectedIds={selectedKosIds}
       />
+
+      {/* SAW Calculation Result */}
+      {ranked.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-border p-12 text-center max-w-md mx-auto shadow-sm">
+          <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+            <Calculator className="w-8 h-8 text-slate-400" />
+          </div>
+          <h2 className="text-lg font-semibold text-slate-800">Tidak Ada Kos Terpilih</h2>
+          <p className="text-slate-500 text-sm mt-1">
+            Pilih minimal satu kos dari daftar di atas untuk melihat hasil perhitungan SAW.
+          </p>
+        </div>
+      ) : (
+        <PerhitunganAccordion
+          criteriaList={criteriaList}
+          scoreMatrix={scoreMatrix}
+          normalMatrix={normalMatrix}
+          ranked={ranked}
+        />
+      )}
     </div>
   );
 }
