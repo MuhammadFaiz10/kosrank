@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { 
-  Home, 
-  Sliders, 
-  Trophy, 
-  TrendingUp, 
-  Users, 
-  FileText, 
-  MessageSquare, 
-  Plus, 
+import {
+  Home,
+  Sliders,
+  Trophy,
+  TrendingUp,
+  Users,
+  FileText,
+  MessageSquare,
+  Plus,
   ArrowRight,
   UserCheck,
   Building,
@@ -74,16 +74,16 @@ export default async function AdminDashboardPage() {
   const monthlyTerbayar = Array(6).fill(0);
   const monthlyTunggakan = Array(6).fill(0);
   const monthLabels = Array(6).fill("");
-  
+
   for (let i = 0; i < 6; i++) {
     const d = new Date();
     d.setDate(1); // Prevent date overflow bug
     d.setMonth(now.getMonth() - 5 + i);
     monthLabels[i] = d.toLocaleDateString("id-ID", { month: "short", year: "numeric" });
-    
+
     const targetMonth = d.getMonth();
     const targetYear = d.getFullYear();
-    
+
     const monthBookings = bookingsTrend.filter(b => {
       const bDate = new Date(b.createdAt);
       return bDate.getMonth() === targetMonth && bDate.getFullYear() === targetYear;
@@ -156,44 +156,44 @@ export default async function AdminDashboardPage() {
 
   // Real conversion rate calculation
   const approvedBookingsCount = await prisma.booking.count({ where: { status: "APPROVED" } });
-  const conversionRate = totalBookings > 0 
-    ? ((approvedBookingsCount / totalBookings) * 100).toFixed(1) 
+  const conversionRate = totalBookings > 0
+    ? ((approvedBookingsCount / totalBookings) * 100).toFixed(1)
     : "0.0";
 
 
 
   const stats = [
-    { 
-      label: "Total Kos Terdaftar", 
-      value: totalKos, 
-      icon: Home, 
+    {
+      label: "Total Kos Terdaftar",
+      value: totalKos,
+      icon: Home,
       gradient: "from-amber-500/10 via-white to-white border-amber-100",
-      color: "text-amber-600 bg-amber-50 border-amber-200", 
-      hoverColor: "group-hover:border-amber-400 group-hover:shadow-amber-100/50" 
+      color: "text-amber-600 bg-amber-50 border-amber-200",
+      hoverColor: "group-hover:border-amber-400 group-hover:shadow-amber-100/50"
     },
-    { 
-      label: "Total Pengguna", 
-      value: totalUsers, 
-      icon: Users, 
+    {
+      label: "Total Pengguna",
+      value: totalUsers,
+      icon: Users,
       gradient: "from-blue-500/10 via-white to-white border-blue-100",
-      color: "text-blue-600 bg-blue-50 border-blue-200", 
-      hoverColor: "group-hover:border-blue-400 group-hover:shadow-blue-100/50" 
+      color: "text-blue-600 bg-blue-50 border-blue-200",
+      hoverColor: "group-hover:border-blue-400 group-hover:shadow-blue-100/50"
     },
-    { 
-      label: "Pengajuan Sewa", 
-      value: totalBookings, 
-      icon: FileText, 
+    {
+      label: "Pengajuan Sewa",
+      value: totalBookings,
+      icon: FileText,
       gradient: "from-emerald-500/10 via-white to-white border-emerald-100",
-      color: "text-emerald-600 bg-emerald-50 border-emerald-200", 
-      hoverColor: "group-hover:border-emerald-400 group-hover:shadow-emerald-100/50" 
+      color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+      hoverColor: "group-hover:border-emerald-400 group-hover:shadow-emerald-100/50"
     },
-    { 
-      label: "Obrolan Aktif", 
-      value: totalChats, 
-      icon: MessageSquare, 
+    {
+      label: "Obrolan Aktif",
+      value: totalChats,
+      icon: MessageSquare,
       gradient: "from-purple-500/10 via-white to-white border-purple-100",
-      color: "text-purple-600 bg-purple-50 border-purple-200", 
-      hoverColor: "group-hover:border-purple-400 group-hover:shadow-purple-100/50" 
+      color: "text-purple-600 bg-purple-50 border-purple-200",
+      hoverColor: "group-hover:border-purple-400 group-hover:shadow-purple-100/50"
     },
   ];
 
@@ -222,8 +222,8 @@ export default async function AdminDashboardPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map(({ label, value, icon: Icon, gradient, color, hoverColor }) => (
-          <div 
-            key={label} 
+          <div
+            key={label}
             className={`group bg-gradient-to-br ${gradient} rounded-2xl border p-6 flex items-center justify-between shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300`}
           >
             <div className="space-y-1">
@@ -239,7 +239,7 @@ export default async function AdminDashboardPage() {
 
       {/* Analytics & Graph Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Booking Trend Visual Area Chart */}
         <RevenueChart
           monthlyTarget={monthlyTarget}
@@ -312,7 +312,7 @@ export default async function AdminDashboardPage() {
 
       {/* Rankings, Bookings & Quick Actions Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Top 5 SAW Rankings with Image Thumbnails */}
         <div className="bg-white rounded-2xl border border-border p-6 shadow-sm lg:col-span-2">
           <div className="flex items-center justify-between mb-1">
@@ -332,29 +332,20 @@ export default async function AdminDashboardPage() {
                 const imageUrl = kos.images[0]?.url || "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=150&q=80";
                 return (
                   <div key={kos.id} className="flex items-center gap-4 p-3 rounded-2xl border border-slate-100 hover:border-amber-300 hover:bg-amber-50/10 transition-all duration-300">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md shrink-0 ${
-                      i === 0 
-                        ? "bg-gradient-to-r from-amber-500 to-[#FF9900]" 
-                        : i === 1 
-                        ? "bg-slate-400" 
-                        : i === 2 
-                        ? "bg-amber-700" 
-                        : "bg-slate-350"
-                    }`}>
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md shrink-0 ${i === 0
+                      ? "bg-gradient-to-r from-amber-500 to-[#FF9900]"
+                      : i === 1
+                        ? "bg-slate-400"
+                        : i === 2
+                          ? "bg-amber-700"
+                          : "bg-slate-350"
+                      }`}>
                       {i + 1}
                     </span>
-                    
+
                     {/* Thumbnail Image */}
-                    <div className="w-12 h-12 relative rounded-xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
-                      <Image 
-                        src={imageUrl} 
-                        alt={kos.name} 
-                        fill
-                        className="object-cover"
-                        sizes="48px"
-                      />
-                    </div>
-                    
+
+
                     <div className="flex-1 min-w-0">
                       <div className="font-bold text-slate-800 text-[13.5px] truncate">{kos.name}</div>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -391,7 +382,7 @@ export default async function AdminDashboardPage() {
               </div>
               <p className="text-xs text-slate-500 font-normal">Pintasan menu untuk konfigurasi model dan data.</p>
             </div>
-            
+
             <div className="space-y-3">
               <Link href="/admin/kos/new" className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-amber-300 hover:bg-amber-50/20 transition-all group">
                 <div className="w-9 h-9 bg-amber-50 border border-amber-100 rounded-lg flex items-center justify-center shrink-0">
@@ -403,7 +394,7 @@ export default async function AdminDashboardPage() {
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-500 transition-colors shrink-0" />
               </Link>
-              
+
               <Link href="/admin/kriteria" className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-teal-300 hover:bg-teal-50/20 transition-all group">
                 <div className="w-9 h-9 bg-teal-50 border border-teal-100 rounded-lg flex items-center justify-center shrink-0">
                   <Sliders className="w-4 h-4 text-teal-600" />
@@ -427,7 +418,7 @@ export default async function AdminDashboardPage() {
               </Link>
             </div>
           </div>
-          
+
           <div className="border-t border-slate-100 pt-4 mt-6">
             <Link href="/" className="text-center block text-xs font-semibold text-[#007185] hover:text-[#005a6a] hover:underline transition-all">
               Buka Halaman Utama Publik &rarr;
@@ -481,13 +472,12 @@ export default async function AdminDashboardPage() {
                       })}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                        b.status === "APPROVED" 
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                          : b.status === "PENDING"
+                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${b.status === "APPROVED"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : b.status === "PENDING"
                           ? "bg-amber-50 text-amber-700 border-amber-200"
                           : "bg-rose-50 text-rose-700 border-rose-200"
-                      }`}>
+                        }`}>
                         {b.status === "APPROVED" ? "Disetujui" : b.status === "PENDING" ? "Menunggu" : "Ditolak"}
                       </span>
                     </td>
