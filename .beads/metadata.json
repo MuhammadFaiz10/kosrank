@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "kosrank",
+  "project_id": "e97ed733-da9a-4875-8ffd-063a0c31ab8f"
+}
