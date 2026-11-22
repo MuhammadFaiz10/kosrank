@@ -49,7 +49,7 @@ async function main() {
 
   // 2. Fetch or create Sellers to own these listings
   let sellers = await prisma.user.findMany({
-    where: { role: 'SELLER' }
+    where: { role: 'ADMIN' }
   });
 
   if (sellers.length === 0) {
@@ -59,7 +59,7 @@ async function main() {
         name: 'Seller Devox',
         email: 'seller.devox@kosrank.com',
         password: '$2a$10$tZ2R88/H1rDfe04cpx/8o.n8aP91o3/91yUv.gQ6dPhqXW.D1wL3K', // bcrypt 'seller123'
-        role: 'SELLER',
+        role: 'ADMIN',
         phone: '08123456789'
       }
     });

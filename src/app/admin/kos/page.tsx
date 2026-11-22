@@ -14,6 +14,7 @@ export default async function AdminKosPage() {
       ],
       include: {
         facilities: true,
+        images: true,
       },
     }),
     prisma.facility.findMany({

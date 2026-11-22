@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 // UBSI Margonda coordinates in Depok
 const UBSI_MARGONDA_COORDS = { lat: -6.3685, lng: 106.8335 };
 
-function calculateDistance(
+export function calculateDistance(
   lat1: number,
   lon1: number,
   lat2: number,
@@ -23,7 +23,7 @@ function calculateDistance(
   return R * c; // in metres
 }
 
-function parseRoomArea(roomSize: string): number {
+export function parseRoomArea(roomSize: string): number {
   if (!roomSize) return 0;
   const match = roomSize.toLowerCase().match(/([0-9.]+)\s*x\s*([0-9.]+)/);
   if (match) {
@@ -32,75 +32,109 @@ function parseRoomArea(roomSize: string): number {
   return 0;
 }
 
-// Exact criteria scores from paper for the 5 seeded kos
-const SEEDED_KOS_SCORES: Record<string, Record<string, number>> = {
-  "Kost Singgahsini Beji": { C1: 40, C2: 80, C3: 100, C4: 40, C5: 40, C6: 100 },
-  "Kost Oemahkoe Depok Tipe Vvip 2 Beji Depok": { C1: 40, C2: 100, C3: 100, C4: 60, C5: 60, C6: 80 },
-  "Kost Singgahsini Cinere": { C1: 60, C2: 60, C3: 100, C4: 40, C5: 100, C6: 60 },
-  "Kost Growing House Jatijajar Tipe Standart A Tapos Depok": { C1: 80, C2: 60, C3: 40, C4: 20, C5: 80, C6: 40 },
-  "Kost Bintang Tipe A Sukmajaya Depok": { C1: 80, C2: 60, C3: 20, C4: 20, C5: 60, C6: 40 },
+// Exact criteria scores from data_kost.xlsx for the 5 case-study alternatives
+export const SEEDED_KOS_SCORES: Record<string, Record<string, number>> = {
+  "Kost Noeks Cinere Depok": { C1: 80, C2: 60, C3: 60, C4: 40, C5: 40 },
+  "Kost Pondok Rindang Tipe C Beji Depok": { C1: 80, C2: 60, C3: 100, C4: 40, C5: 80 },
+  "Kost Singgahsini Taman Bunga Tipe C Cimanggis Depok": { C1: 60, C2: 80, C3: 80, C4: 60, C5: 100 },
+  "Kost Singgahsini DFlory Tipe B Cinere Depok": { C1: 60, C2: 80, C3: 60, C4: 60, C5: 100 },
+  "Kost Rumah Nimas Sawangan Depok": { C1: 80, C2: 80, C3: 40, C4: 60, C5: 20 },
 };
 
-// Scorer helper functions for dynamic calculations
-function getC1Score(price: number): number {
-  if (price <= 500000) return 100;
-  if (price <= 1000000) return 80;
-  if (price <= 2000000) return 60;
-  if (price <= 3000000) return 40;
+// Scorer helper functions for dynamic calculations (rubrik: data_kost.xlsx)
+export function getC1Score(price: number): number {
+  if (price < 1000000) return 100;
+  if (price < 2000000) return 80;
+  if (price < 3000000) return 60;
+  if (price < 4000000) return 40;
   return 20;
 }
 
-function getC2Score(distanceKm: number): number {
-  if (distanceKm <= 5) return 100;
-  if (distanceKm <= 8) return 80;
-  if (distanceKm <= 12) return 60;
+export function getC2Score(facilityCount: number): number {
+  if (facilityCount <= 5) return 20;
+  if (facilityCount <= 7) return 40;
+  if (facilityCount <= 10) return 60;
+  if (facilityCount <= 13) return 80;
+  return 100;
+}
+
+export function getC3Score(distanceKm: number): number {
+  if (distanceKm <= 1) return 100;
+  if (distanceKm <= 5) return 80;
+  if (distanceKm <= 10) return 60;
   if (distanceKm <= 15) return 40;
   return 20;
 }
 
-function getC3Score(area: number): number {
-  if (area <= 4) return 20;
+export function getC4Score(area: number): number {
+  if (area <= 6) return 20;
   if (area <= 9) return 40;
-  if (area <= 16) return 60;
-  if (area <= 25) return 80;
+  if (area <= 12) return 60;
+  if (area <= 15) return 80;
   return 100;
 }
 
-function getC4Score(facilities: string[]): number {
-  const hasKamarMandiDalam = facilities.includes("Kamar Mandi Dalam");
-  const hasAC = facilities.includes("AC");
-  const hasKursi = facilities.includes("Kursi");
-
-  if (hasKamarMandiDalam && hasAC) return 100;
-  if (hasAC) return 80;
-  if (hasKamarMandiDalam) return 60;
-  if (hasKursi) return 40;
-  return 20;
+export function getC5Score(rating: number | null | undefined): number {
+  if (rating == null) return 20;
+  if (rating < 2) return 40;
+  if (rating < 3) return 60;
+  if (rating < 4) return 80;
+  return 100;
 }
 
-function getC5Score(facilities: string[]): number {
-  const hasWiFi = facilities.includes("WiFi");
-  const hasDapur = facilities.includes("Dapur");
-  const hasParkir = facilities.includes("Parkir Motor");
-  const hasPenjaga = facilities.includes("Penjaga Kos");
-  const hasCCTV = facilities.includes("CCTV");
-  const hasListrik = facilities.includes("Listrik Gratis");
-
-  if (hasListrik && hasParkir && hasDapur && hasWiFi && hasPenjaga && hasCCTV) return 100;
-  if (hasListrik && hasParkir && hasDapur && hasWiFi && hasPenjaga) return 80;
-  if (hasParkir && hasDapur && hasWiFi && hasPenjaga && hasCCTV) return 60;
-  if (hasParkir && hasDapur && hasWiFi && hasPenjaga) return 40;
-  return 20;
+/**
+ * Pembulatan desimal half-up 2 angka (agar 0.845 -> 0.85 seperti Excel,
+ * bukan 0.84 akibat representasi biner float).
+ */
+export function roundHalfUp2(n: number): number {
+  return Math.round(n * 100 + 1e-9) / 100;
 }
 
-function getC6Score(transit: string): number {
-  if (!transit) return 40;
-  const t = transit.toLowerCase();
-  if (t.includes("kereta")) return 100;
-  if (t.includes("bus")) return 80;
-  if (t.includes("angkot")) return 60;
-  if (t.includes("ojek") || t.includes("pribadi")) return 40;
-  return 20;
+/**
+ * Pure SAW math — normalization + weighted sum + descending sort.
+ * No DB access, so it is directly testable against the paper's oracle
+ * (metode_saw_new.md / TSD §8.6).
+ */
+export function rankFromScoreMatrix(
+  kosIds: string[],
+  scoreMatrix: Record<string, Record<string, number>>,
+  weights: Record<string, number>,
+  attributes: Record<string, "COST" | "BENEFIT">,
+  criteriaCodes: string[]
+): { id: string; score: number }[] {
+  if (kosIds.length === 0) return [];
+
+  const normalMatrix: Record<string, Record<string, number>> = {};
+
+  for (const code of criteriaCodes) {
+    const values = kosIds.map((id) => scoreMatrix[id][code] || 0);
+    const maxVal = Math.max(...values);
+    const minVal = Math.min(...values.filter((v) => v > 0));
+
+    for (const id of kosIds) {
+      if (!normalMatrix[id]) normalMatrix[id] = {};
+      const xij = scoreMatrix[id][code] || 0;
+      const attr = attributes[code] || "BENEFIT";
+
+      if (attr === "BENEFIT") {
+        // BENEFIT: nilai lebih besar = lebih baik → xij / max
+        normalMatrix[id][code] = maxVal > 0 ? xij / maxVal : 0;
+      } else {
+        // COST: nilai lebih kecil = lebih baik → min / xij
+        normalMatrix[id][code] = xij > 0 ? minVal / xij : 0;
+      }
+    }
+  }
+
+  return kosIds
+    .map((id) => {
+      let score = 0;
+      for (const code of criteriaCodes) {
+        score += (weights[code] || 0) * (normalMatrix[id][code] || 0);
+      }
+      return { id, score: parseFloat(score.toFixed(4)) };
+    })
+    .sort((a, b) => b.score - a.score);
 }
 
 /**
@@ -141,76 +175,37 @@ export async function calculateDynamicSAW(customLat?: number, customLng?: number
 
   for (const kos of kosList) {
     scoreMatrix[kos.id] = {};
-    
+
     // Calculate distance
     const distMeters = calculateDistance(kos.latitude, kos.longitude, targetLat, targetLng);
     distances[kos.id] = distMeters;
     const distKm = distMeters / 1000;
 
-    // Use seeded values if no custom coordinates are supplied
-    const isSeeded = SEEDED_KOS_SCORES[kos.name];
-    const useSeeded = !customLat && !customLng && isSeeded;
-
-    // C1: Harga (Cost)
-    scoreMatrix[kos.id]["C1"] = useSeeded ? isSeeded.C1 : getC1Score(kos.price);
-
-    // C2: Jarak (Cost)
-    // If coordinates are custom, we recalculate distance. Otherwise, use seeded if available.
-    scoreMatrix[kos.id]["C2"] = (customLat || customLng || !isSeeded) ? getC2Score(distKm) : isSeeded.C2;
-
-    // C3: Ukuran Ruangan (Benefit)
-    scoreMatrix[kos.id]["C3"] = useSeeded ? isSeeded.C3 : getC3Score(parseRoomArea(kos.roomSize));
-
-    // C4: Fasilitas Kamar (Benefit)
-    const facNames = kos.facilities.map((f) => f.facility.name);
-    scoreMatrix[kos.id]["C4"] = useSeeded ? isSeeded.C4 : getC4Score(facNames);
-
-    // C5: Fasilitas Kos (Benefit)
-    scoreMatrix[kos.id]["C5"] = useSeeded ? isSeeded.C5 : getC5Score(facNames);
-
-    // C6: Akses Transportasi (Benefit)
-    scoreMatrix[kos.id]["C6"] = useSeeded ? isSeeded.C6 : getC6Score(kos.transit);
+    // Ranking global murni dari data — tanpa override nama (override hanya
+    // untuk tampilan terisolasi /saw via getSAWCalculationDetails)
+    scoreMatrix[kos.id]["C1"] = getC1Score(kos.price);
+    scoreMatrix[kos.id]["C2"] = getC2Score(kos.facilities.length);
+    scoreMatrix[kos.id]["C3"] = getC3Score(distKm);
+    scoreMatrix[kos.id]["C4"] = getC4Score(parseRoomArea(kos.roomSize));
+    scoreMatrix[kos.id]["C5"] = getC5Score(kos.rating);
   }
 
-  // 4. Normalization
-  const normalMatrix: Record<string, Record<string, number>> = {};
-  const criteriaCodes = ["C1", "C2", "C3", "C4", "C5", "C6"];
+  // 4-5. Normalization + weighted sum (pure, shared math)
+  const criteriaCodes = ["C1", "C2", "C3", "C4", "C5"];
+  const scores = rankFromScoreMatrix(
+    kosList.map((k) => k.id),
+    scoreMatrix,
+    weights,
+    attributes,
+    criteriaCodes
+  );
 
-  for (const code of criteriaCodes) {
-    const values = kosList.map((k) => scoreMatrix[k.id][code] || 0);
-    const maxVal = Math.max(...values);
-    const minVal = Math.min(...values.filter((v) => v > 0));
-
-    for (const kos of kosList) {
-      if (!normalMatrix[kos.id]) normalMatrix[kos.id] = {};
-      const xij = scoreMatrix[kos.id][code] || 0;
-      const attr = attributes[code] || "BENEFIT";
-
-      if (attr === "BENEFIT") {
-        // BENEFIT: nilai lebih besar = lebih baik → xij / max
-        normalMatrix[kos.id][code] = maxVal > 0 ? xij / maxVal : 0;
-      } else {
-        // COST: nilai lebih kecil = lebih baik → min / xij
-        normalMatrix[kos.id][code] = xij > 0 ? minVal / xij : 0;
-      }
-    }
-  }
-
-  // 5. Weighted sum calculation
-  const ranked = kosList.map((kos) => {
-    let score = 0;
-    for (const code of criteriaCodes) {
-      const rij = normalMatrix[kos.id][code] || 0;
-      const wj = weights[code] || 0;
-      score += wj * rij;
-    }
-
-    return {
-      kos,
-      score: parseFloat(score.toFixed(4)),
-      distanceMeters: Math.round(distances[kos.id]),
-    };
-  });
+  const scoreById = new Map(scores.map((s) => [s.id, s.score]));
+  const ranked = kosList.map((kos) => ({
+    kos,
+    score: scoreById.get(kos.id) ?? 0,
+    distanceMeters: Math.round(distances[kos.id]),
+  }));
 
   // Sort by score descending
   ranked.sort((a, b) => b.score - a.score);
@@ -243,7 +238,7 @@ export async function calculateAndUpdateSAW() {
   return ranked.map((item) => ({ id: item.kos.id, score: item.score }));
 }
 
-export async function getSAWCalculationDetails(kosIds?: string[]) {
+export async function getSAWCalculationDetails(kosIds?: string[], useSeededScores = false) {
   const criteriaList = await prisma.criteria.findMany({
     orderBy: { code: "asc" },
   });
@@ -279,19 +274,18 @@ export async function getSAWCalculationDetails(kosIds?: string[]) {
     const distMeters = calculateDistance(kos.latitude, kos.longitude, targetLat, targetLng);
     const distKm = distMeters / 1000;
     const isSeeded = SEEDED_KOS_SCORES[kos.name];
-    const useSeeded = isSeeded; // use seeded for default base comparison if available
+    // Override skor eksak Excel hanya untuk tampilan terisolasi 5 alternatif (/saw)
+    const useSeeded = useSeededScores && isSeeded;
 
     scoreMatrix[kos.id]["C1"] = useSeeded ? isSeeded.C1 : getC1Score(kos.price);
-    scoreMatrix[kos.id]["C2"] = useSeeded ? isSeeded.C2 : getC2Score(distKm);
-    scoreMatrix[kos.id]["C3"] = useSeeded ? isSeeded.C3 : getC3Score(parseRoomArea(kos.roomSize));
-    const facNames = kos.facilities.map((f) => f.facility.name);
-    scoreMatrix[kos.id]["C4"] = useSeeded ? isSeeded.C4 : getC4Score(facNames);
-    scoreMatrix[kos.id]["C5"] = useSeeded ? isSeeded.C5 : getC5Score(facNames);
-    scoreMatrix[kos.id]["C6"] = useSeeded ? isSeeded.C6 : getC6Score(kos.transit);
+    scoreMatrix[kos.id]["C2"] = useSeeded ? isSeeded.C2 : getC2Score(kos.facilities.length);
+    scoreMatrix[kos.id]["C3"] = useSeeded ? isSeeded.C3 : getC3Score(distKm);
+    scoreMatrix[kos.id]["C4"] = useSeeded ? isSeeded.C4 : getC4Score(parseRoomArea(kos.roomSize));
+    scoreMatrix[kos.id]["C5"] = useSeeded ? isSeeded.C5 : getC5Score(kos.rating);
   }
 
   const normalMatrix: Record<string, Record<string, number>> = {};
-  const criteriaCodes = ["C1", "C2", "C3", "C4", "C5", "C6"];
+  const criteriaCodes = ["C1", "C2", "C3", "C4", "C5"];
 
   for (const code of criteriaCodes) {
     const values = kosList.map((k) => scoreMatrix[k.id][code] || 0);

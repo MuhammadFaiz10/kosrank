@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Home, Settings, MapPin, LogOut, Sliders, Users, Calculator, Trophy, List } from "lucide-react";
+import { LayoutDashboard, Home, Settings, MapPin, LogOut, Sliders, Users, Calculator, Trophy, List, CalendarCheck } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/kos", label: "Semua Kos", icon: Home },
+  { href: "/admin/bookings", label: "Booking", icon: CalendarCheck },
   { href: "/admin/users", label: "Pengguna", icon: Users },
   { href: "/admin/kriteria", label: "Kriteria SAW", icon: Sliders },
   { href: "/admin/sub-kriteria", label: "Sub Kriteria SAW", icon: List },
@@ -29,7 +30,7 @@ export function AdminSidebar() {
         </Link>
         <div className="flex">
           <span className="text-[10px] uppercase font-semibold tracking-wider bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full border border-brand-600/30">
-            Super Admin Panel
+            Admin Panel
           </span>
         </div>
       </div>

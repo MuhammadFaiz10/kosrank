@@ -47,6 +47,7 @@ export function BuyBox({ kosId, kosName, price, ownerId }: BuyBoxProps) {
 
   // Rental states
   const [duration, setDuration] = useState(1);
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [agreeTerms, setAgreeTerms] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -99,7 +100,7 @@ export function BuyBox({ kosId, kosName, price, ownerId }: BuyBoxProps) {
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kosId, durationMonths: duration }),
+        body: JSON.stringify({ kosId, durationMonths: duration, startDate: new Date(startDate).toISOString() }),
       });
       const data = await res.json();
 
@@ -239,13 +240,13 @@ export function BuyBox({ kosId, kosName, price, ownerId }: BuyBoxProps) {
               <div className="space-y-1">
                 <span className="font-semibold text-[12px] text-brand-700">Iklan Kos Anda</span>
                 <p className="text-ink-700 text-[11px] leading-relaxed">
-                  Ini adalah properti kos yang Anda daftarkan. Anda dapat memantau pengajuan sewa dan pesan masuk dari Dashboard Penjual Anda.
+                  Ini adalah properti kos yang Anda daftarkan. Anda dapat memantau pengajuan sewa dan pesan masuk dari Dashboard Admin Anda.
                 </p>
-                <Link 
-                  href="/seller" 
+                <Link
+                  href="/admin"
                   className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:text-brand-600 transition-colors pt-1"
                 >
-                  Buka Dashboard Penjual <ArrowRight className="w-3 h-3" />
+                  Buka Dashboard Admin <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
             </div>
@@ -288,7 +289,7 @@ export function BuyBox({ kosId, kosName, price, ownerId }: BuyBoxProps) {
         <div className="mt-5 pt-3.5 border-t border-line flex items-start gap-2.5 text-[11px] text-ink-500 leading-relaxed">
           <Shield className="w-4 h-4 text-brand-700 flex-shrink-0 mt-0.5" />
           <span>
-            <strong className="text-ink-900">Keamanan KosRank.</strong> Data kamar, harga, dan koordinat diverifikasi objektif via metode SPK SAW.
+            <strong className="text-ink-900">Keamanan KosRank.</strong> Skor kamar, harga, dan koordinat dihitung objektif via metode SPK SAW.
           </span>
         </div>
       </div>
@@ -352,8 +353,8 @@ export function BuyBox({ kosId, kosName, price, ownerId }: BuyBoxProps) {
                         <label className="block text-[12px] font-semibold text-ink-900">
                           Pilih Jangka Waktu Sewa:
                         </label>
-                        <select 
-                          value={duration} 
+                        <select
+                          value={duration}
                           onChange={(e) => setDuration(parseInt(e.target.value))}
                           className="w-full border border-line bg-white rounded-lg px-2.5 py-1.5 text-[13px] text-ink-900 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 cursor-pointer"
                         >
@@ -362,6 +363,21 @@ export function BuyBox({ kosId, kosName, price, ownerId }: BuyBoxProps) {
                           <option value={6}>6 Bulan</option>
                           <option value={12}>12 Bulan (1 Tahun)</option>
                         </select>
+                      </div>
+
+                      {/* Select Start Date */}
+                      <div className="space-y-1">
+                        <label className="block text-[12px] font-semibold text-ink-900">
+                          Tanggal Mulai Sewa:
+                        </label>
+                        <input
+                          type="date"
+                          value={startDate}
+                          min={new Date().toISOString().split("T")[0]}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          required
+                          className="w-full border border-line bg-white rounded-lg px-2.5 py-1.5 text-[13px] text-ink-900 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100 cursor-pointer"
+                        />
                       </div>
                     </div>
 
@@ -503,10 +519,7 @@ export function BuyBox({ kosId, kosName, price, ownerId }: BuyBoxProps) {
                     <span className="font-display text-[13px] font-semibold truncate max-w-[220px]">
                       {kosName}
                     </span>
-                    <span className="text-[10px] text-white/80 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-eco animate-pulse" />
-                      Pemilik Kos Terverifikasi
-                    </span>
+                    <span className="text-[10px] text-white/80">Pemilik Kos</span>
                   </div>
                 </div>
                 

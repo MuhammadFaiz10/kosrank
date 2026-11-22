@@ -5,15 +5,16 @@ import { useState } from "react";
 import { MapPin, Menu, X, Search, ChevronDown, User, LayoutDashboard, LogOut } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 const CATEGORY_LINKS = [
   { label: "Semua Kos", href: "/explore" },
   { label: "Kos Putra", href: "/explore?gender=PUTRA" },
   { label: "Kos Putri", href: "/explore?gender=PUTRI" },
   { label: "Kos Campur", href: "/explore?gender=CAMPUR" },
-  { label: "Dekat Amikom", href: "/explore?kampus=Universitas Amikom Yogyakarta" },
-  { label: "Dekat UPN", href: "/explore?kampus=UPN Veteran Yogyakarta" },
-  { label: "Dekat STIMY YKPN", href: "/explore?kampus=STIMY YKPN" },
+  // { label: "Dekat Amikom", href: "/explore?kampus=Universitas Amikom Yogyakarta" },
+  // { label: "Dekat UPN", href: "/explore?kampus=UPN Veteran Yogyakarta" },
+  // { label: "Dekat STIMY YKPN", href: "/explore?kampus=STIMY YKPN" },
 ];
 
 export function Navbar() {
@@ -22,7 +23,7 @@ export function Navbar() {
   const { data: session } = useSession();
   const role = (session?.user as any)?.role;
 
-  const dashboardLink = role === "SUPER_ADMIN" ? "/admin" : role === "SELLER" ? "/seller" : "/dashboard";
+  const dashboardLink = role === "ADMIN" ? "/admin" : "/dashboard";
 
   return (
     <header className="w-full flex flex-col z-50 sticky top-0">
@@ -32,21 +33,20 @@ export function Navbar() {
           <Link href="/explore" className="px-2.5 py-0.5 rounded-full bg-white text-brand-700 font-semibold">
             Ranking SAW
           </Link>
-          <Link href="/explore?gender=PUTRA" className="px-2.5 py-0.5 rounded-full hover:bg-white/15 transition-colors">
+          {/*<Link href="/explore?gender=PUTRA" className="px-2.5 py-0.5 rounded-full hover:bg-white/15 transition-colors">
             Kos Putra
           </Link>
           <Link href="/explore?gender=PUTRI" className="px-2.5 py-0.5 rounded-full hover:bg-white/15 transition-colors">
             Kos Putri
-          </Link>
+          </Link>*/}
         </div>
         <p className="text-white/90">
-          Rekomendasi kos berbasis metode Simple Additive Weighting —{" "}
-          <Link href="/explore" className="underline font-semibold hover:text-white">
-            Discover now
+          Rekomendasi kos berbasis metode Simple Additive Weighting,{" "}
+          <Link href="/saw" className="underline font-semibold hover:text-white">
+            lihat perhitungannya
           </Link>
         </p>
         <div className="flex items-center gap-4 text-white/90">
-          <span>Support 24/7</span>
           <span className="font-semibold">IDR</span>
         </div>
       </div>
@@ -72,6 +72,9 @@ export function Navbar() {
             <Link href="/explore" className="px-3 py-1 rounded-full hover:bg-white/15 transition-colors text-[12px] font-medium">
               Eksplor
             </Link>
+            <Link href="/saw" className="px-3 py-1 rounded-full hover:bg-white/15 transition-colors text-[12px] font-medium">
+              Perhitungan SAW
+            </Link>
           </nav>
 
           {/* Search bar (desktop) — logic: form GET ke /explore */}
@@ -80,7 +83,7 @@ export function Navbar() {
             method="GET"
             className="hidden md:flex flex-1 max-w-xl h-9 bg-white rounded-full items-center overflow-hidden focus-within:ring-2 focus-within:ring-brand-100"
           >
-            <select
+            {/*<select
               name="kampus"
               aria-label="Pilih kampus"
               className="bg-white text-[11px] text-ink-700 pl-4 pr-1 outline-none cursor-pointer font-medium h-full flex-shrink-0"
@@ -89,12 +92,12 @@ export function Navbar() {
               <option value="Universitas Amikom Yogyakarta">Amikom</option>
               <option value="UPN Veteran Yogyakarta">UPN</option>
               <option value="STIMY YKPN">STIMY YKPN</option>
-            </select>
+            </select>*/}
             <div className="w-px h-4 bg-line flex-shrink-0" />
             <input
               type="text"
               name="lokasi"
-              placeholder="Cari kos, area, atau kampus..."
+              placeholder="Cari kos dekat kampus pilihanmu..."
               className="flex-grow px-3 text-[13px] text-ink-900 bg-white outline-none placeholder:text-ink-500 min-w-0"
             />
             <button
@@ -109,6 +112,7 @@ export function Navbar() {
 
         {/* Right options */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          {session && <NotificationBell />}
           {!session ? (
             <Link
               href="/auth/login"
@@ -144,7 +148,7 @@ export function Navbar() {
                       <div className="px-4 py-2 border-b border-line mb-1.5">
                         <p className="text-[13px] font-semibold truncate">{session.user?.name}</p>
                         <p className="text-[10px] text-ink-500 font-medium uppercase mt-0.5 tracking-wider">
-                          {role === "SUPER_ADMIN" ? "Super Admin" : role === "SELLER" ? "Penjual Kos" : "Pencari Kos"}
+                          {role === "ADMIN" ? "Admin" : "Pencari Kos"}
                         </p>
                       </div>
 

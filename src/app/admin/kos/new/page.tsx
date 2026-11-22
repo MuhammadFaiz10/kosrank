@@ -81,7 +81,7 @@ export default function NewKosPage() {
 
         <div className="space-y-1.5">
           <Label htmlFor="address">Alamat Lengkap</Label>
-          <Input id="address" name="address" required placeholder="Jl. Condong Catur, Depok, Sleman..." className="rounded-xl" />
+          <Input id="address" name="address" required placeholder="Jl. Margonda Raya No. 45, Beji, Depok" className="rounded-xl" />
         </div>
 
         <div className="flex gap-3 pt-2">

@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const createRoomSchema = z.object({
+  kosId: z.string().min(1, "Kos ID dan Seller ID diperlukan."),
+  sellerId: z.string().min(1),
+});
 
 export async function GET(req: Request) {
   try {
@@ -32,8 +38,8 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json(rooms);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Terjadi kesalahan." }, { status: 500 });
   }
 }
 
@@ -44,12 +50,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Silakan masuk terlebih dahulu untuk memulai chat." }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { kosId, sellerId } = body;
-
-    if (!kosId || !sellerId) {
-      return NextResponse.json({ error: "Kos ID dan Seller ID diperlukan." }, { status: 400 });
+    const parsed = createRoomSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
+    const { kosId, sellerId } = parsed.data;
 
     if (session.user.id === sellerId) {
       return NextResponse.json({ error: "Anda tidak dapat memulai chat dengan diri Anda sendiri." }, { status: 400 });
@@ -85,8 +90,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(room);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Chat room error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Terjadi kesalahan." }, { status: 500 });
   }
 }

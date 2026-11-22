@@ -1,8 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { SlidersHorizontal, RotateCcw } from "lucide-react";
+
+interface FacilityOption {
+  id: string;
+  name: string;
+  type: string;
+}
 
 interface FilterSidebarProps {
   currentParams: {
@@ -11,7 +17,10 @@ interface FilterSidebarProps {
     gender?: string;
     minHarga?: string;
     maxHarga?: string;
+    fasilitas?: string;
   };
+  facilities: FacilityOption[];
+  campuses: string[];
 }
 
 const LOCATION_OPTIONS = [
@@ -34,7 +43,7 @@ const GENDER_OPTIONS = [
   { value: "CAMPUR", label: "Campur" },
 ];
 
-export function FilterSidebar({ currentParams }: FilterSidebarProps) {
+export function FilterSidebar({ currentParams, facilities, campuses }: FilterSidebarProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -43,14 +52,25 @@ export function FilterSidebar({ currentParams }: FilterSidebarProps) {
   const [gender, setGender] = useState(currentParams.gender || "");
   const [minHarga, setMinHarga] = useState(currentParams.minHarga || "");
   const [maxHarga, setMaxHarga] = useState(currentParams.maxHarga || "");
+  const [fasilitas, setFasilitas] = useState<string[]>(
+    currentParams.fasilitas ? currentParams.fasilitas.split(",").filter(Boolean) : []
+  );
 
-  useEffect(() => {
+  // Reset state lokal saat URL berubah (adjust during render, tanpa effect)
+  const [lastParams, setLastParams] = useState(currentParams);
+  if (lastParams !== currentParams) {
+    setLastParams(currentParams);
     setKampus(currentParams.kampus || "");
     setLokasi(currentParams.lokasi || "");
     setGender(currentParams.gender || "");
     setMinHarga(currentParams.minHarga || "");
     setMaxHarga(currentParams.maxHarga || "");
-  }, [currentParams]);
+    setFasilitas(currentParams.fasilitas ? currentParams.fasilitas.split(",").filter(Boolean) : []);
+  }
+
+  const toggleFasilitas = (id: string) => {
+    setFasilitas((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
+  };
 
   const applyFilter = () => {
     const params = new URLSearchParams();
@@ -59,6 +79,7 @@ export function FilterSidebar({ currentParams }: FilterSidebarProps) {
     if (gender) params.set("gender", gender);
     if (minHarga) params.set("minHarga", minHarga);
     if (maxHarga) params.set("maxHarga", maxHarga);
+    if (fasilitas.length > 0) params.set("fasilitas", fasilitas.join(","));
 
     startTransition(() => {
       router.push(`/explore?${params.toString()}`);
@@ -71,6 +92,7 @@ export function FilterSidebar({ currentParams }: FilterSidebarProps) {
     setGender("");
     setMinHarga("");
     setMaxHarga("");
+    setFasilitas([]);
     startTransition(() => {
       router.push("/explore");
     });
@@ -86,6 +108,23 @@ export function FilterSidebar({ currentParams }: FilterSidebarProps) {
         <SlidersHorizontal className="w-4 h-4 text-brand-700" />
         <span className="font-display font-semibold text-[14px] text-ink-900">Filter Kos</span>
       </div>
+
+      {/* Kampus */}
+      {campuses.length > 0 && (
+        <div className="mb-4">
+          <label className="text-[11px] font-semibold text-ink-500 uppercase tracking-wider mb-1.5 block">
+            Kampus
+          </label>
+          <select value={kampus} onChange={(e) => setKampus(e.target.value)} className={inputClass}>
+            <option value="">Semua Kampus</option>
+            {campuses.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Lokasi */}
       <div className="mb-4">
@@ -135,7 +174,7 @@ export function FilterSidebar({ currentParams }: FilterSidebarProps) {
       </div>
 
       {/* Harga range */}
-      <div className="mb-5">
+      <div className="mb-4">
         <label className="text-[11px] font-semibold text-ink-500 uppercase tracking-wider mb-1.5 block">
           Range Harga (Rp/Bulan)
         </label>
@@ -163,6 +202,28 @@ export function FilterSidebar({ currentParams }: FilterSidebarProps) {
           </div>
         </div>
       </div>
+
+      {/* Fasilitas checkboxes */}
+      {facilities.length > 0 && (
+        <div className="mb-5">
+          <label className="text-[11px] font-semibold text-ink-500 uppercase tracking-wider mb-1.5 block">
+            Fasilitas
+          </label>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border border-line bg-surface-muted/50 rounded-xl p-3 max-h-44 overflow-y-auto">
+            {facilities.map((f) => (
+              <label key={f.id} className="flex items-center gap-1.5 text-[12px] text-ink-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={fasilitas.includes(f.id)}
+                  onChange={() => toggleFasilitas(f.id)}
+                  className="rounded accent-brand-700 cursor-pointer"
+                />
+                <span className="truncate">{f.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="flex flex-col gap-2 pt-1">

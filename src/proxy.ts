@@ -5,18 +5,16 @@ export const proxy = auth((req) => {
   const { pathname } = req.nextUrl
   const role = (req.auth?.user as any)?.role
 
-  // Super Admin routes
+  // Admin routes
   if (pathname.startsWith("/admin")) {
-    if (!req.auth || role !== "SUPER_ADMIN") {
+    if (!req.auth || role !== "ADMIN") {
       return NextResponse.redirect(new URL("/auth/login?from=admin", req.url))
     }
   }
 
-  // Seller routes
+  // Panel seller sudah dilebur ke /admin — arahkan pengunjung lama
   if (pathname.startsWith("/seller")) {
-    if (!req.auth || role !== "SELLER") {
-      return NextResponse.redirect(new URL("/auth/login?from=seller", req.url))
-    }
+    return NextResponse.redirect(new URL("/admin", req.url))
   }
 
   // User/Customer dashboard

@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Store, 
-  User, 
-  Shield, 
-  Search, 
-  Filter, 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  User,
+  Shield,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
   SlidersHorizontal,
   Pencil,
   Trash2,
@@ -21,7 +20,7 @@ interface UserItem {
   id: string;
   name: string;
   email: string;
-  role: "SUPER_ADMIN" | "SELLER" | "USER";
+  role: "ADMIN" | "USER";
   createdAt: Date | string;
   _count: {
     kos: number;
@@ -34,7 +33,7 @@ interface AdminUsersTableProps {
 
 export function AdminUsersTable({ initialUsers }: AdminUsersTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"USER" | "SELLER">("USER");
+  const [activeTab, setActiveTab] = useState<"USER" | "ADMIN">("USER");
   const [sortBy, setSortBy] = useState("joined-desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
@@ -42,20 +41,17 @@ export function AdminUsersTable({ initialUsers }: AdminUsersTableProps) {
   const itemsPerPage = 10;
 
   const roleIcon: Record<string, React.ReactNode> = {
-    SUPER_ADMIN: <Shield className="w-3.5 h-3.5 text-brand-700" />,
-    SELLER: <Store className="w-3.5 h-3.5 text-[#3D6FED]" />,
+    ADMIN: <Shield className="w-3.5 h-3.5 text-brand-700" />,
     USER: <User className="w-3.5 h-3.5 text-ink-700" />,
   };
 
   const roleLabel: Record<string, string> = {
-    SUPER_ADMIN: "Super Admin",
-    SELLER: "Penjual / Pemilik",
+    ADMIN: "Admin",
     USER: "Pencari / Pengguna",
   };
 
   const roleBg: Record<string, string> = {
-    SUPER_ADMIN: "bg-brand-100 text-brand-700 border-brand-600/20",
-    SELLER: "bg-surface-tint text-[#3D6FED] border-[#3D6FED]/20",
+    ADMIN: "bg-brand-100 text-brand-700 border-brand-600/20",
     USER: "bg-surface-muted text-ink-700 border-line",
   };
 
@@ -94,8 +90,7 @@ export function AdminUsersTable({ initialUsers }: AdminUsersTableProps) {
   const paginatedUsers = filteredAndSortedUsers.slice(startIndex, endIndex);
 
   // Dynamic user role counters
-  const superAdminCount = initialUsers.filter((u) => u.role === "SUPER_ADMIN").length;
-  const sellerCount = initialUsers.filter((u) => u.role === "SELLER").length;
+  const adminCount = initialUsers.filter((u) => u.role === "ADMIN").length;
   const standardCount = initialUsers.filter((u) => u.role === "USER").length;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,44 +150,44 @@ export function AdminUsersTable({ initialUsers }: AdminUsersTableProps) {
           </div>
         </button>
 
-        {/* Seller Stat */}
-        <button 
-          onClick={() => { setActiveTab("SELLER"); setCurrentPage(1); }}
+        {/* Admin Stat */}
+        <button
+          onClick={() => { setActiveTab("ADMIN"); setCurrentPage(1); }}
           className={`text-left bg-white rounded-2xl border p-5 flex items-center justify-between shadow-sm transition-all cursor-pointer ${
-            activeTab === "SELLER" ? "ring-2 ring-blue-400 border-transparent bg-blue-50/10" : "hover:border-line"
+            activeTab === "ADMIN" ? "ring-2 ring-brand-600/30 border-transparent bg-brand-100/30" : "hover:border-line"
           }`}
         >
           <div className="space-y-1">
-            <div className="text-2xl font-semibold text-ink-900 tracking-tight leading-none">{sellerCount}</div>
-            <div className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Pemilik / Penjual (Seller)</div>
+            <div className="text-2xl font-semibold text-ink-900 tracking-tight leading-none">{adminCount}</div>
+            <div className="text-[11px] font-bold text-ink-500 uppercase tracking-wider">Admin</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-            <Store className="w-5 h-5 text-blue-500" />
+          <div className="w-10 h-10 rounded-xl bg-brand-100 border border-brand-600/20 flex items-center justify-center">
+            <Shield className="w-5 h-5 text-brand-700" />
           </div>
         </button>
       </div>
 
       {/* Tabs Switcher */}
       <div className="flex border-b border-line">
-        <button 
-          onClick={() => { setActiveTab("USER"); setCurrentPage(1); }} 
+        <button
+          onClick={() => { setActiveTab("USER"); setCurrentPage(1); }}
           className={`px-5 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === "USER" 
-              ? "border-brand-700 text-brand-700" 
+            activeTab === "USER"
+              ? "border-brand-700 text-brand-700"
               : "border-transparent text-ink-500 hover:text-ink-900 hover:border-line"
           }`}
         >
           Pencari Kos ({standardCount})
         </button>
-        <button 
-          onClick={() => { setActiveTab("SELLER"); setCurrentPage(1); }} 
+        <button
+          onClick={() => { setActiveTab("ADMIN"); setCurrentPage(1); }}
           className={`px-5 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
-            activeTab === "SELLER" 
-              ? "border-brand-700 text-brand-700" 
+            activeTab === "ADMIN"
+              ? "border-brand-700 text-brand-700"
               : "border-transparent text-ink-500 hover:text-ink-900 hover:border-line"
           }`}
         >
-          Pemilik / Penjual ({sellerCount})
+          Admin ({adminCount})
         </button>
       </div>
 
@@ -267,7 +262,7 @@ export function AdminUsersTable({ initialUsers }: AdminUsersTableProps) {
                           {user._count.kos} Kos
                         </span>
                       ) : (
-                        <span className="text-ink-500 text-xs font-normal">—</span>
+                        <span className="text-ink-500 text-xs font-normal">-</span>
                       )}
                     </td>
                     <td className="py-4 px-5 text-ink-500 text-xs font-medium">
@@ -417,8 +412,7 @@ export function AdminUsersTable({ initialUsers }: AdminUsersTableProps) {
                   className="w-full border border-line rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-brand-600 bg-white cursor-pointer"
                 >
                   <option value="USER">Pencari / Pengguna (USER)</option>
-                  <option value="SELLER">Penjual / Pemilik (SELLER)</option>
-                  <option value="SUPER_ADMIN">Super Admin (SUPER_ADMIN)</option>
+                  <option value="ADMIN">Admin (ADMIN)</option>
                 </select>
               </div>
 

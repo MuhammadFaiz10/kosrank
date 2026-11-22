@@ -105,10 +105,8 @@ export default function ProfileClientPage({ user }: ProfileClientPageProps) {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case "SUPER_ADMIN":
+      case "ADMIN":
         return "bg-red-500/10 text-red-500 border-red-500/20"
-      case "SELLER":
-        return "bg-primary/10 text-primary border-primary/20"
       default:
         return "bg-slate-500/10 text-slate-500 border-slate-500/20"
     }
@@ -116,10 +114,8 @@ export default function ProfileClientPage({ user }: ProfileClientPageProps) {
 
   const getRoleName = (role: string) => {
     switch (role) {
-      case "SUPER_ADMIN":
-        return "Super Admin"
-      case "SELLER":
-        return "Pemilik Kos (Seller)"
+      case "ADMIN":
+        return "Admin"
       default:
         return "Pencari Kos (User)"
     }
@@ -209,7 +205,7 @@ export default function ProfileClientPage({ user }: ProfileClientPageProps) {
                   </span>
                 </div>
                 
-                {user.role === "SELLER" && (
+                {user.role === "ADMIN" && (
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Home className="w-3.5 h-3.5" /> Total Kos</span>
                     <span className="font-semibold text-primary">{user._count?.kos || 0} Unit</span>
@@ -495,18 +491,14 @@ export default function ProfileClientPage({ user }: ProfileClientPageProps) {
                         </Badge>
                       </div>
                       <p className="text-sm font-bold text-slate-800">
-                        {user.role === "SUPER_ADMIN" 
-                          ? "Akses Penuh Sistem" 
-                          : user.role === "SELLER" 
-                          ? "Pemasar & Pemilik Kos" 
+                        {user.role === "ADMIN"
+                          ? "Akses Penuh Sistem"
                           : "Pencari Kos"}
                       </p>
                       <p className="text-xs text-slate-500 leading-relaxed">
-                        {user.role === "SUPER_ADMIN" 
-                          ? "Anda memiliki otoritas penuh untuk mengelola kriteria, sub-kriteria, seluruh kos terdaftar, dan pengguna." 
-                          : user.role === "SELLER" 
-                          ? "Anda dapat mempublikasikan kos baru, mengedit info kos, dan melihat visualisasi peringkat rekomendasi SAW." 
-                          : "Anda dapat mencari kos terbaik di daerah Condong Catur menggunakan sistem pendukung keputusan metode SAW."}
+                        {user.role === "ADMIN"
+                          ? "Anda memiliki otoritas penuh untuk mengelola kriteria, sub-kriteria, seluruh kos terdaftar, booking, dan pengguna."
+                          : "Anda dapat mencari kos terbaik di daerah Anda menggunakan sistem pendukung keputusan metode SAW."}
                       </p>
                     </div>
 
@@ -527,30 +519,24 @@ export default function ProfileClientPage({ user }: ProfileClientPageProps) {
                   <div className="bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <h4 className="text-sm font-bold text-slate-800">
-                        {user.role === "SUPER_ADMIN" 
-                          ? "Akses Panel Admin" 
-                          : user.role === "SELLER" 
-                          ? "Kelola Listing Kos Anda" 
+                        {user.role === "ADMIN"
+                          ? "Akses Panel Admin"
                           : "Eksplorasi Kos Sekarang"}
                       </h4>
                       <p className="text-xs text-slate-500">
-                        {user.role === "SUPER_ADMIN" 
-                          ? "Kelola kriteria bobot SAW, pengguna, dan kos di halaman admin." 
-                          : user.role === "SELLER" 
-                          ? "Tambahkan kos baru atau edit fasilitas & harga untuk menaikkan nilai SAW." 
+                        {user.role === "ADMIN"
+                          ? "Kelola kriteria bobot SAW, booking, pengguna, dan kos di halaman admin."
                           : "Bandingkan fasilitas, jarak, dan harga kos secara akurat."}
                       </p>
                     </div>
                     
                     <a
-                      href={user.role === "SUPER_ADMIN" ? "/admin" : user.role === "SELLER" ? "/seller" : "/explore"}
+                      href={user.role === "ADMIN" ? "/admin" : "/explore"}
                       className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary/95 text-white font-medium text-xs px-4.5 py-2.5 rounded-xl shadow-sm hover:shadow transition-all group"
                     >
                       <span>
-                        {user.role === "SUPER_ADMIN" 
-                          ? "Buka Admin Panel" 
-                          : user.role === "SELLER" 
-                          ? "Buka Seller Dashboard" 
+                        {user.role === "ADMIN"
+                          ? "Buka Admin Panel"
                           : "Eksplor Kos"}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />

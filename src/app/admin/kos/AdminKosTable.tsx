@@ -31,7 +31,9 @@ interface Kos {
   latitude: number;
   longitude: number;
   transit: string;
+  rating: number | null;
   facilities: { facilityId: string }[];
+  images: { url: string }[];
 }
 
 interface Facility {
@@ -271,7 +273,7 @@ export function AdminKosTable({ kosList, allFacilities }: AdminKosTableProps) {
                         {kos.ranking}
                       </span>
                     ) : (
-                      <span className="text-ink-500 text-xs font-medium">—</span>
+                      <span className="text-ink-500 text-xs font-medium">-</span>
                     )}
                   </td>
                   <td className="py-4 px-5">
@@ -514,8 +516,8 @@ export function AdminKosTable({ kosList, allFacilities }: AdminKosTableProps) {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-ink-500">Akses Transportasi Utama</label>
-                <select 
-                  name="transit" 
+                <select
+                  name="transit"
                   className="w-full border border-line rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-brand-600 bg-white cursor-pointer"
                 >
                   <option value="Ojek online/kendaraan pribadi">Ojek online/kendaraan pribadi (Skor 40)</option>
@@ -523,6 +525,19 @@ export function AdminKosTable({ kosList, allFacilities }: AdminKosTableProps) {
                   <option value="Bus, angkot, ojek online/kendaraan pribadi">Bus, angkot, ojek online/kendaraan pribadi (Skor 80)</option>
                   <option value="Kereta, bus, angkot, ojek online/kendaraan pribadi">Kereta, bus, angkot, ojek online/kendaraan pribadi (Skor 100)</option>
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-ink-500">Rating (0 - 5, kosongkan bila belum ada)</label>
+                <input
+                  type="number"
+                  name="rating"
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  placeholder="Contoh: 4.5"
+                  className="w-full border border-line rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-brand-600"
+                />
               </div>
 
               <div className="space-y-2">
@@ -565,6 +580,17 @@ export function AdminKosTable({ kosList, allFacilities }: AdminKosTableProps) {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-ink-500">URL Gambar</label>
+                <p className="text-[11px] text-ink-500 -mt-1">Satu URL per baris. Gambar pertama menjadi foto utama listing.</p>
+                <textarea
+                  name="imageUrls"
+                  rows={3}
+                  placeholder={"https://images.unsplash.com/photo-...\nhttps://images.unsplash.com/photo-..."}
+                  className="w-full border border-line rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-brand-600 resize-none"
+                />
               </div>
 
               <div className="flex items-center gap-3 pt-4 border-t border-line">
@@ -712,8 +738,8 @@ export function AdminKosTable({ kosList, allFacilities }: AdminKosTableProps) {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-ink-500">Akses Transportasi Utama</label>
-                <select 
-                  name="transit" 
+                <select
+                  name="transit"
                   defaultValue={editingKos.transit}
                   className="w-full border border-line rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-brand-600 bg-white cursor-pointer"
                 >
@@ -722,6 +748,20 @@ export function AdminKosTable({ kosList, allFacilities }: AdminKosTableProps) {
                   <option value="Bus, angkot, ojek online/kendaraan pribadi">Bus, angkot, ojek online/kendaraan pribadi (Skor 80)</option>
                   <option value="Kereta, bus, angkot, ojek online/kendaraan pribadi">Kereta, bus, angkot, ojek online/kendaraan pribadi (Skor 100)</option>
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-ink-500">Rating (0 - 5, kosongkan bila belum ada)</label>
+                <input
+                  type="number"
+                  name="rating"
+                  min={0}
+                  max={5}
+                  step={0.1}
+                  defaultValue={editingKos.rating ?? ""}
+                  placeholder="Contoh: 4.5"
+                  className="w-full border border-line rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-brand-600"
+                />
               </div>
 
               <div className="space-y-2">
@@ -772,6 +812,17 @@ export function AdminKosTable({ kosList, allFacilities }: AdminKosTableProps) {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-ink-500">URL Gambar</label>
+                <p className="text-[11px] text-ink-500 -mt-1">Satu URL per baris. Gambar pertama menjadi foto utama listing.</p>
+                <textarea
+                  name="imageUrls"
+                  rows={3}
+                  defaultValue={editingKos.images?.map((i) => i.url).join("\n")}
+                  className="w-full border border-line rounded-xl px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-brand-600 resize-none"
+                />
               </div>
 
               <div className="flex items-center gap-3 pt-4 border-t border-line">

@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const messageSchema = z.object({
+  text: z.string().trim().min(1, "Pesan tidak boleh kosong.").max(2000),
+});
 
 export async function GET(
   req: Request,
@@ -38,8 +43,8 @@ export async function GET(
     });
 
     return NextResponse.json(messages);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Terjadi kesalahan." }, { status: 500 });
   }
 }
 
@@ -54,12 +59,11 @@ export async function POST(
     }
 
     const { roomId } = await params;
-    const body = await req.json();
-    const { text } = body;
-
-    if (!text) {
-      return NextResponse.json({ error: "Text is required" }, { status: 400 });
+    const parsed = messageSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
+    const { text } = parsed.data;
 
     // Verify user belongs to room
     const room = await prisma.chatRoom.findUnique({
@@ -94,7 +98,7 @@ export async function POST(
     });
 
     return NextResponse.json(message, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Terjadi kesalahan." }, { status: 500 });
   }
 }

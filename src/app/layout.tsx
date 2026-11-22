@@ -8,9 +8,9 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mon
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta" });
 
 export const metadata: Metadata = {
-  title: "KosRank – Temukan Kos Terbaik di Condong Catur",
+  title: "KosRank – Temukan Kos Terbaik di Depok",
   description:
-    "Marketplace kos terpercaya di Condong Catur Yogyakarta. Bandingkan harga, fasilitas, dan jarak kampus menggunakan sistem rekomendasi SAW.",
+    "Marketplace kos terpercaya di Depok. Bandingkan harga, fasilitas, dan jarak kampus menggunakan sistem rekomendasi SAW.",
 };
 
 export default function RootLayout({

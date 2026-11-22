@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  Calculator,
   MapPin,
   Shield,
   Zap,
@@ -14,8 +15,6 @@ import {
   BedDouble,
   Users,
   Building2,
-  GraduationCap,
-  Wallet,
   CheckCircle,
 } from "lucide-react";
 import { KosCard } from "@/components/cards/KosCard";
@@ -51,16 +50,16 @@ const CATEGORY_TILES = [
   { label: "Kos Putra", desc: "Kos khusus putra di sekitar kampus.", grad: "bg-grad-bags", href: "/explore?gender=PUTRA", icon: BedDouble },
   { label: "Kos Putri", desc: "Kos khusus putri, aman dan nyaman.", grad: "bg-grad-headwear", href: "/explore?gender=PUTRI", icon: Users },
   { label: "Kos Campur", desc: "Pilihan kos campur untuk semua mahasiswa.", grad: "bg-grad-tech", href: "/explore?gender=CAMPUR", icon: Building2 },
-  { label: "Dekat Amikom", desc: "Jarak tempuh singkat ke kampus Amikom.", grad: "bg-grad-apparel", href: "/explore?kampus=Universitas Amikom Yogyakarta", icon: GraduationCap },
-  { label: "Dekat UPN", desc: "Alternatif kos strategis dekat UPN.", grad: "bg-grad-office", href: "/explore?kampus=UPN Veteran Yogyakarta", icon: GraduationCap },
-  { label: "Dekat STIMY YKPN", desc: "Kos terjangkau dekat STIMY YKPN.", grad: "bg-grad-eco", href: "/explore?kampus=STIMY YKPN", icon: Wallet },
+  { label: "Kos Beji", desc: "Kos di kawasan Beji, dekat Margonda dan Kukusan.", grad: "bg-grad-apparel", href: "/explore?lokasi=Beji", icon: MapPin },
+  { label: "Kos Cinere", desc: "Pilihan kos di kawasan Cinere, Depok.", grad: "bg-grad-office", href: "/explore?lokasi=Cinere", icon: MapPin },
+  { label: "Kos Cimanggis", desc: "Kos terjangkau di kawasan Cimanggis.", grad: "bg-grad-eco", href: "/explore?lokasi=Cimanggis", icon: MapPin },
 ];
 
 const USP_ITEMS = [
-  { icon: Zap, title: "Ranking SAW Otomatis", desc: "Skor objektif dari 6 kriteria berbobot, diperbarui real-time." },
+  { icon: Calculator, title: "Ranking SAW Otomatis", desc: "Skor objektif dari 5 kriteria berbobot, dihitung ulang otomatis." },
   { icon: Crosshair, title: "Jarak GPS Real-time", desc: "Rekomendasi dihitung dari titik lokasi Anda saat ini." },
   { icon: Shield, title: "Transparan & Objektif", desc: "Rincian bobot dan normalisasi terbuka untuk dipelajari." },
-  { icon: CheckCircle, title: "Data Terkurasi", desc: "Listing kos aktif yang tervalidasi oleh admin." },
+  { icon: CheckCircle, title: "Data Terkurasi", desc: "Listing kos aktif yang dikelola oleh admin." },
 ];
 
 export default function LandingPageInteractive({ initialKos, totalKos }: LandingPageInteractiveProps) {
@@ -185,7 +184,7 @@ export default function LandingPageInteractive({ initialKos, totalKos }: Landing
     <div className="flex flex-col font-sans text-ink-900 bg-white">
       {/* ─── Hero Banner (design.md §5.4) ─── */}
       <section className="px-3 sm:px-4 pt-3 sm:pt-4">
-        <div className="max-w-[1200px] mx-auto rounded-[24px] bg-grad-hero overflow-hidden relative">
+        <div className="max-w-[1200px] mx-auto rounded-[24px] bg-brand-100 overflow-hidden relative">
           <div className="max-w-[1200px] mx-auto px-6 sm:px-10 py-12 md:py-16 grid md:grid-cols-[1fr_360px] items-center gap-8">
             {/* Left: headline */}
             <div className="space-y-4 text-left">
@@ -408,14 +407,14 @@ export default function LandingPageInteractive({ initialKos, totalKos }: Landing
             <span className="text-[10px] font-bold uppercase tracking-widest text-white/90">Transparan</span>
             <h3 className="font-display font-bold text-[20px] mt-1">Perhitungan terbuka</h3>
             <p className="text-[12px] text-white/90 leading-relaxed mt-1.5">
-              Lihat bobot tiap kriteria dan cara skor dihitung — tanpa sponsor bias.
+              Lihat bobot tiap kriteria dan cara skor dihitung, tanpa sponsor bias.
             </p>
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="mt-auto inline-flex items-center gap-2 border border-white/70 hover:bg-white/15 text-white h-9 px-4 rounded-lg text-[13px] font-semibold transition-colors self-start cursor-pointer"
+            <Link
+              href="/saw"
+              className="mt-auto inline-flex items-center gap-2 border border-white/70 hover:bg-white/15 text-white h-9 px-4 rounded-lg text-[13px] font-semibold transition-colors self-start"
             >
-              Lihat Metodologi <ArrowRight className="w-4 h-4" />
-            </button>
+              Lihat Perhitungan <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
           <div className="bg-grad-eco rounded-2xl p-6 text-white flex flex-col min-h-[220px]">
@@ -442,15 +441,15 @@ export default function LandingPageInteractive({ initialKos, totalKos }: Landing
               Metodologi yang bisa dipertanggungjawabkan
             </h2>
             <p className="text-[13px] text-ink-700 leading-relaxed mt-3 max-w-md">
-              Di balik setiap ranking, ada matriks keputusan yang dinormalisasi lalu dibobot sesuai kriteria resmi —
+              Di balik setiap ranking, ada matriks keputusan yang dinormalisasi lalu dibobot sesuai kriteria resmi,
               sama seperti metode SAW pada penelitian SPK pemilihan kos.
             </p>
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="mt-5 inline-flex items-center gap-2 bg-brand-700 hover:bg-brand-600 text-white h-10 px-5 rounded-lg text-[13px] font-semibold transition-all hover:-translate-y-px cursor-pointer"
+            <Link
+              href="/saw"
+              className="mt-5 inline-flex items-center gap-2 bg-brand-700 hover:bg-brand-600 text-white h-10 px-5 rounded-lg text-[13px] font-semibold transition-all hover:-translate-y-px"
             >
-              Cara Kerja SAW <ArrowRight className="w-4 h-4" />
-            </button>
+              Lihat Perhitungan SAW <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
           <div className="space-y-3">

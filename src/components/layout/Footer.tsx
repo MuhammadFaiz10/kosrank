@@ -60,31 +60,39 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-[13px] mb-3">Rekomendasi Kampus</h4>
+            <h4 className="font-display font-semibold text-[13px] mb-3">Area Populer</h4>
             <ul className="space-y-2 text-[12px] text-ink-500">
               <li>
-                <Link href="/explore?kampus=Universitas Amikom Yogyakarta" className="hover:text-brand-600 transition-colors">
-                  Universitas Amikom Yogyakarta
+                <Link href="/explore?lokasi=Beji" className="hover:text-brand-600 transition-colors">
+                  Beji
                 </Link>
               </li>
               <li>
-                <Link href="/explore?kampus=UPN Veteran Yogyakarta" className="hover:text-brand-600 transition-colors">
-                  UPN Veteran Yogyakarta
+                <Link href="/explore?lokasi=Cinere" className="hover:text-brand-600 transition-colors">
+                  Cinere
                 </Link>
               </li>
               <li>
-                <Link href="/explore?kampus=STIMY YKPN" className="hover:text-brand-600 transition-colors">
-                  STIMY YKPN Yogyakarta
+                <Link href="/explore?lokasi=Cimanggis" className="hover:text-brand-600 transition-colors">
+                  Cimanggis
                 </Link>
               </li>
-              <li>Universitas Mercu Buana Yogyakarta</li>
+              <li>
+                <Link href="/explore?lokasi=Limo" className="hover:text-brand-600 transition-colors">
+                  Limo
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-display font-semibold text-[13px] mb-3">Bantuan</h4>
             <ul className="space-y-2 text-[12px] text-ink-500">
-              <li>Metode SAW (Bobot 6 Kriteria)</li>
+              <li>
+                <Link href="/saw" className="hover:text-brand-600 transition-colors">
+                  Metode SAW (5 Kriteria)
+                </Link>
+              </li>
               <li>Data terkurasi &amp; tervalidasi</li>
               <li>Rekomendasi real-time berbasis GPS</li>
             </ul>
@@ -101,7 +109,7 @@ export function Footer() {
         <div className="border-t border-line mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-ink-500">
           <div>© 2026 KosRank. Tugas Akhir Sistem Pendukung Keputusan.</div>
           <div className="flex gap-4">
-            <span>Condong Catur, Sleman, DIY</span>
+            <span>Depok, Jawa Barat</span>
             {/* TODO: link Privacy policy & Company info saat halaman tersedia */}
           </div>
         </div>

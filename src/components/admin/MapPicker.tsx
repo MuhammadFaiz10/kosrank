@@ -244,7 +244,7 @@ export default function MapPicker({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500" />
           <input
             type="text"
-            placeholder="Cari lokasi/daerah (Contoh: Condong Catur, Margonda...)"
+            placeholder="Cari lokasi/daerah (Contoh: Margonda, Cinere...)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -38,7 +39,7 @@ export function LoginForm() {
       const session = await sessionRes.json();
       const role = session?.user?.role;
 
-      if (role === "SUPER_ADMIN") router.push("/admin");
+      if (role === "ADMIN") router.push("/admin");
       else router.push("/");
     }
   };
@@ -82,6 +83,18 @@ export function LoginForm() {
       <Button type="submit" disabled={loading} className="w-full h-11 rounded-xl bg-brand-700 hover:bg-brand-600 text-white font-semibold">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Memuat...</> : "Masuk"}
       </Button>
+
+      <div className="flex items-center justify-between text-[13px]">
+        <span className="text-ink-500">
+          Belum punya akun?{" "}
+          <Link href="/auth/register" className="text-brand-700 font-semibold hover:text-brand-600 transition-colors">
+            Daftar
+          </Link>
+        </span>
+        <Link href="/auth/forgot-password" className="text-ink-500 hover:text-brand-600 transition-colors">
+          Lupa password?
+        </Link>
+      </div>
     </form>
   );
 }

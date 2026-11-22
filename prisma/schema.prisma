@@ -7,14 +7,17 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
-  email       String   @unique
+  email       String    @unique
   password    String
-  role        Role     @default(USER)
+  role        Role      @default(USER)
   phone       String?
   avatar      String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+
+  resetToken       String?
+  resetTokenExpiry DateTime?
 
   kos               Kos[]
   bookings          Booking[]
@@ -37,6 +40,7 @@ model Kos {
   campus      String
   phone       String?
   transit     String     @default("Ojek online/kendaraan pribadi")
+  rating      Float?
   isActive    Boolean    @default(true)
   finalScore  Float?
   ranking     Int?
@@ -99,8 +103,7 @@ model SubCriteria {
 }
 
 enum Role {
-  SUPER_ADMIN
-  SELLER
+  ADMIN
   USER
 }
 

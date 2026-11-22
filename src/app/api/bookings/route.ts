@@ -1,6 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const bookingSchema = z.object({
+  kosId: z.string().min(1, "Kos ID diperlukan."),
+  durationMonths: z.coerce.number().int().min(1).max(36).default(1),
+  startDate: z
+    .string()
+    .optional()
+    .refine((v) => v === undefined || !isNaN(new Date(v).getTime()), {
+      message: "Tanggal mulai sewa tidak valid.",
+    }),
+});
 
 export async function POST(req: Request) {
   try {
@@ -9,12 +21,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Silakan masuk terlebih dahulu untuk mengajukan sewa." }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { kosId, durationMonths } = body;
-
-    if (!kosId) {
-      return NextResponse.json({ error: "Kos ID diperlukan." }, { status: 400 });
+    const parsed = bookingSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
+    const { kosId, durationMonths, startDate } = parsed.data;
 
     // Check if kos exists
     const kos = await prisma.kos.findUnique({
@@ -43,14 +54,15 @@ export async function POST(req: Request) {
       data: {
         userId: session.user.id,
         kosId,
-        durationMonths: durationMonths || 1,
+        durationMonths,
+        startDate: startDate ? new Date(startDate) : new Date(),
         status: "PENDING",
       },
     });
 
     return NextResponse.json({ success: true, booking }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Booking error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Terjadi kesalahan." }, { status: 500 });
   }
 }

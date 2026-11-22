@@ -10,6 +10,7 @@ interface SearchParams {
   gender?: string;
   minHarga?: string;
   maxHarga?: string;
+  fasilitas?: string;
   page?: string;
 }
 
@@ -36,13 +37,19 @@ export default async function ExplorePage({
       ...(params.maxHarga ? { lte: parseInt(params.maxHarga) } : {}),
     };
   }
+  const fasilitasIds = params.fasilitas ? params.fasilitas.split(",").filter(Boolean) : [];
+  if (fasilitasIds.length > 0) {
+    where.facilities = {
+      some: { facilityId: { in: fasilitasIds } },
+    };
+  }
 
   const page = params.page ? parseInt(params.page) : 1;
   const itemsPerPage = 9; // Grid works better with multiples of 3
   const skip = (page - 1) * itemsPerPage;
   const take = itemsPerPage;
 
-  const [kosList, totalCount] = await Promise.all([
+  const [kosList, totalCount, allFacilities, campusRows] = await Promise.all([
     prisma.kos.findMany({
       where,
       orderBy: [
@@ -56,7 +63,11 @@ export default async function ExplorePage({
       }
     }),
     prisma.kos.count({ where }),
+    prisma.facility.findMany({ orderBy: { name: "asc" } }),
+    prisma.kos.findMany({ distinct: ["campus"], select: { campus: true }, orderBy: { campus: "asc" } }),
   ]);
+
+  const campuses = campusRows.map((row) => row.campus);
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
@@ -67,6 +78,7 @@ export default async function ExplorePage({
     if (params.gender) query.set("gender", params.gender);
     if (params.minHarga) query.set("minHarga", params.minHarga);
     if (params.maxHarga) query.set("maxHarga", params.maxHarga);
+    if (params.fasilitas) query.set("fasilitas", params.fasilitas);
     query.set("page", pageNum.toString());
     return `/explore?${query.toString()}`;
   };
@@ -97,7 +109,7 @@ export default async function ExplorePage({
         </h1>
         {totalCount > 0 ? (
           <p className="text-[12px] text-ink-500 mt-1">
-            Menampilkan <span className="font-semibold text-ink-900">{(page - 1) * itemsPerPage + 1}-{Math.min(page * itemsPerPage, totalCount)}</span> dari <span className="font-semibold text-ink-900">{totalCount}</span> tempat kos di Condong Catur
+            Menampilkan <span className="font-semibold text-ink-900">{(page - 1) * itemsPerPage + 1}-{Math.min(page * itemsPerPage, totalCount)}</span> dari <span className="font-semibold text-ink-900">{totalCount}</span> tempat kos di Depok
           </p>
         ) : (
           <p className="text-[12px] text-ink-500 mt-1">Tidak ada tempat kos yang cocok dengan kriteria pencarian Anda.</p>
@@ -107,7 +119,7 @@ export default async function ExplorePage({
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         {/* Sidebar Filter */}
         <aside className="w-full lg:w-[260px] flex-shrink-0">
-          <FilterSidebar currentParams={params} />
+          <FilterSidebar currentParams={params} facilities={allFacilities} campuses={campuses} />
         </aside>
 
         {/* Kos Grid */}

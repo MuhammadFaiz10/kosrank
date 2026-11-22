@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { BuyBox } from "@/components/kos/BuyBox";
+import { KosGallery } from "@/components/kos/KosGallery";
 
 export default async function KosDetailPage({
   params,
@@ -39,8 +40,6 @@ export default async function KosDetailPage({
   const scoreVal = kos.finalScore || 0.82;
   const starsCount = Math.round(scoreVal * 5);
 
-  const imageUrl = kos.images && kos.images[0]?.url;
-
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 text-ink-900 text-left">
       {/* ─── Breadcrumb ─── */}
@@ -58,43 +57,8 @@ export default async function KosDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* LEFT COLUMN: Gallery (lg:col-span-4) */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="aspect-square bg-white border border-line rounded-2xl overflow-hidden flex items-center justify-center p-2 relative">
-            {imageUrl ? (
-              <img 
-                src={imageUrl} 
-                alt={kos.name} 
-                className="w-full h-full object-cover rounded-xl" 
-              />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-ink-500/40">
-                <MapPin className="w-16 h-16" />
-                <span className="text-xs">Foto Kos Tidak Tersedia</span>
-              </div>
-            )}
-            
-            {kos.ranking && (
-              <div className="absolute top-3 left-3 bg-badge-blue text-white text-[12px] font-bold px-2.5 py-1 rounded-full">
-                RANK #{kos.ranking}
-              </div>
-            )}
-          </div>
-          
-          {/* Small images preview row */}
-          <div className="grid grid-cols-4 gap-2">
-            <div className="aspect-square bg-white border-2 border-brand-600 rounded-lg cursor-pointer overflow-hidden p-0.5">
-              {imageUrl ? (
-                <img src={imageUrl} alt={`Foto utama ${kos.name}`} className="w-full h-full object-cover rounded-md" />
-              ) : (
-                <div className="w-full h-full bg-surface-muted flex items-center justify-center text-[10px] text-ink-500">Utama</div>
-              )}
-            </div>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="aspect-square bg-white border border-line rounded-lg opacity-60 hover:opacity-100 cursor-pointer overflow-hidden flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-ink-500/40" />
-              </div>
-            ))}
-          </div>
+        <div className="lg:col-span-4">
+          <KosGallery images={kos.images.map((i) => i.url)} name={kos.name} rank={kos.ranking} />
         </div>
 
         {/* MIDDLE COLUMN: Details & Description (lg:col-span-5) */}
@@ -210,7 +174,7 @@ export default async function KosDetailPage({
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-brand-600/20 text-[11px] text-ink-500 leading-relaxed">
-                Skor kecocokan dihitung dari bobot kriteria Harga (30%), Jarak (20%), Fasilitas Kamar (15%), Fasilitas Umum (10%), dll.
+                Skor kecocokan dihitung dari bobot kriteria Harga (30%), Fasilitas (30%), Jarak (20%), Ukuran Ruangan (10%), dan Rating (10%).
               </div>
             </div>
           )}
