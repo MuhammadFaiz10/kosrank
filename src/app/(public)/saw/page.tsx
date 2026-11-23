@@ -31,6 +31,21 @@ export default async function SawPublicPage() {
     include: { criteria: true },
   });
 
+  // Kriteria bisa saja dibersihkan dari modul SPK
+  if (details.criteriaList.length === 0) {
+    return (
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-16 text-left text-ink-900">
+        <div className="flex flex-col items-center justify-center py-12 bg-surface-tint rounded-2xl border border-line text-center">
+          <p className="font-display font-semibold text-[15px] text-ink-900">Kriteria belum diatur</p>
+          <p className="text-[13px] text-ink-500 mt-1">
+            Perhitungan SAW butuh kriteria. Pulihkan rubrik bawaan dari modul SPK di{" "}
+            <Link href="/kos" className="text-brand-700 font-semibold hover:underline">/kos</Link>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const codeByKosId = new Map(orderedKos.map((k, i) => [k.id, `A0${i + 1}`]));
   const kosById = new Map(details.kosList.map((k) => [k.id, k]));
   const scoreById = new Map(details.ranked.map((r) => [r.kos.id, r]));

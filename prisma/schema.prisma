@@ -46,6 +46,15 @@ model Kos {
   ranking     Int?
   createdAt   DateTime   @default(now())
 
+  // Kolom modul SPK (spesifikasi "alternatif")
+  kode          String?  @unique
+  jarakKm       Float?
+  panjangM      Float?
+  lebarM        Float?
+  fasilitasLevel Int?
+  fasilitasTeks String?
+  dipilih       Boolean  @default(true)
+
   ownerId     String?
   owner       User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
@@ -53,6 +62,7 @@ model Kos {
   facilities  KosFacility[]
   bookings    Booking[]
   chatRooms   ChatRoom[]
+  ratingKecocokan RatingKecocokan[]
 }
 
 model KosImage {
@@ -84,12 +94,24 @@ model KosFacility {
 
 model Criteria {
   id          String            @id @default(cuid())
-  code        String
+  code        String            @unique
   name        String
   weight      Float
   attribute   CriteriaAttribute
 
   subCriteria SubCriteria[]
+  ratingKecocokan RatingKecocokan[]
+}
+
+model RatingKecocokan {
+  kosId       String
+  criteriaCode String
+  nilai       Int
+
+  kos         Kos     @relation(fields: [kosId], references: [id], onDelete: Cascade)
+  kriteria    Criteria @relation(fields: [criteriaCode], references: [code], onDelete: Cascade)
+
+  @@id([kosId, criteriaCode])
 }
 
 model SubCriteria {

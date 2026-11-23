@@ -3,6 +3,7 @@ import {
   SEEDED_KOS_SCORES,
   rankFromScoreMatrix,
   roundHalfUp2,
+  facilityLevelFromCount,
   getC1Score,
   getC2Score,
   getC3Score,
@@ -32,12 +33,14 @@ describe("Scorer per kriteria (rubrik data_kost.xlsx)", () => {
     expect(getC1Score(4000000)).toBe(20);
   });
 
-  it("C2 fasilitas (benefit, berdasarkan jumlah fasilitas)", () => {
-    expect(getC2Score(5)).toBe(20);
-    expect(getC2Score(6)).toBe(40);
-    expect(getC2Score(8)).toBe(60);
-    expect(getC2Score(11)).toBe(80);
-    expect(getC2Score(14)).toBe(100);
+  it("C2 fasilitas (benefit): level dari jumlah fasilitas, skor = level x 20", () => {
+    expect(facilityLevelFromCount(5)).toBe(1);
+    expect(facilityLevelFromCount(6)).toBe(2);
+    expect(facilityLevelFromCount(8)).toBe(3);
+    expect(facilityLevelFromCount(11)).toBe(4);
+    expect(facilityLevelFromCount(14)).toBe(5);
+    expect(getC2Score(facilityLevelFromCount(8))).toBe(60);
+    expect(getC2Score(facilityLevelFromCount(14))).toBe(100);
   });
 
   it("C3 jarak (cost): 0-1=100, 1-5=80, 5-10=60, 10-15=40, >15=20", () => {

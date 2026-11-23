@@ -3,6 +3,9 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 import bcrypt from 'bcryptjs'
+import { calculateDistance, UBSI_MARGONDA_COORDS } from "../src/features/saw/engine"
+import { facilityLevelFromCount, nextKode, parseRoomSize, syncAllRatingKecocokan } from "../src/features/spk/spk"
+import { DEFAULT_CRITERIA } from "../src/features/spk/default-rubric"
 
 const connectionString = process.env.DATABASE_URL
 const pool = new Pool({ connectionString })
@@ -49,63 +52,14 @@ async function main() {
 
   console.log('✅ Users seeded')
 
-  // ─── Criteria & Sub-Criteria (rubrik: data_kost.xlsx) ────────────────────
-  const criteriaData = [
-    { code: 'C1', name: 'Harga', weight: 0.3, attribute: 'COST' as const },
-    { code: 'C2', name: 'Fasilitas', weight: 0.3, attribute: 'BENEFIT' as const },
-    { code: 'C3', name: 'Jarak', weight: 0.2, attribute: 'COST' as const },
-    { code: 'C4', name: 'Ukuran Ruangan', weight: 0.1, attribute: 'BENEFIT' as const },
-    { code: 'C5', name: 'Rating', weight: 0.1, attribute: 'BENEFIT' as const },
-  ]
-
-  for (const c of criteriaData) {
-    const created = await prisma.criteria.create({ data: c })
-
-    if (c.code === 'C1') {
-      await prisma.subCriteria.createMany({ data: [
-        { criteriaId: created.id, name: '500.000 - 999.999', value: '<1000000', score: 100 },
-        { criteriaId: created.id, name: '1.000.000 - 1.999.999', value: '<2000000', score: 80 },
-        { criteriaId: created.id, name: '2.000.000 - 2.999.999', value: '<3000000', score: 60 },
-        { criteriaId: created.id, name: '3.000.000 - 3.999.999', value: '<4000000', score: 40 },
-        { criteriaId: created.id, name: '> 4.000.000', value: '>=4000000', score: 20 },
-      ]})
-    }
-    if (c.code === 'C2') {
-      await prisma.subCriteria.createMany({ data: [
-        { criteriaId: created.id, name: 'Sangat tidak lengkap (<= 5 fasilitas)', value: '<=5', score: 20 },
-        { criteriaId: created.id, name: 'Kurang lengkap (6 - 7 fasilitas)', value: '6-7', score: 40 },
-        { criteriaId: created.id, name: 'Cukup lengkap (8 - 10 fasilitas)', value: '8-10', score: 60 },
-        { criteriaId: created.id, name: 'Lengkap (11 - 13 fasilitas)', value: '11-13', score: 80 },
-        { criteriaId: created.id, name: 'Sangat lengkap (>= 14 fasilitas)', value: '>=14', score: 100 },
-      ]})
-    }
-    if (c.code === 'C3') {
-      await prisma.subCriteria.createMany({ data: [
-        { criteriaId: created.id, name: '0 - 1 km', value: '0-1', score: 100 },
-        { criteriaId: created.id, name: '1 - 5 km', value: '1-5', score: 80 },
-        { criteriaId: created.id, name: '5 - 10 km', value: '5-10', score: 60 },
-        { criteriaId: created.id, name: '10 - 15 km', value: '10-15', score: 40 },
-        { criteriaId: created.id, name: '> 15 km', value: '>15', score: 20 },
-      ]})
-    }
-    if (c.code === 'C4') {
-      await prisma.subCriteria.createMany({ data: [
-        { criteriaId: created.id, name: 'Luas <= 6 m2', value: '<=6', score: 20 },
-        { criteriaId: created.id, name: 'Luas > 6-9 m2', value: '6-9', score: 40 },
-        { criteriaId: created.id, name: 'Luas > 9-12 m2', value: '9-12', score: 60 },
-        { criteriaId: created.id, name: 'Luas > 12-15 m2', value: '12-15', score: 80 },
-        { criteriaId: created.id, name: 'Luas > 15 m2', value: '>15', score: 100 },
-      ]})
-    }
-    if (c.code === 'C5') {
-      await prisma.subCriteria.createMany({ data: [
-        { criteriaId: created.id, name: 'Not found', value: 'null', score: 20 },
-        { criteriaId: created.id, name: '1 - 2', value: '1-2', score: 40 },
-        { criteriaId: created.id, name: '2 - 3', value: '2-3', score: 60 },
-        { criteriaId: created.id, name: '3 - 4', value: '3-4', score: 80 },
-        { criteriaId: created.id, name: '4 - 5', value: '4-5', score: 100 },
-      ]})
-    }
+  // ─── Criteria & Sub-Criteria (rubrik: data_kost.xlsx, config bersama) ────
+  for (const c of DEFAULT_CRITERIA) {
+    const created = await prisma.criteria.create({
+      data: { code: c.code, name: c.name, weight: c.weight, attribute: c.attribute },
+    })
+    await prisma.subCriteria.createMany({
+      data: c.subKriteria.map((s) => ({ ...s, criteriaId: created.id })),
+    })
   }
   console.log('✅ Criteria & Sub-Criteria seeded')
 
@@ -188,6 +142,20 @@ async function main() {
   const kosData = [];
   let nameCounter = 0;
 
+  // Kode modul SPK: 5 kos studi kasus = A01-A05 (sheet SAW), sisanya nextKode
+  const CASE_STUDY_ORDER = [
+    'Kost Noeks Cinere Depok',
+    'Kost Pondok Rindang Tipe C Beji Depok',
+    'Kost Singgahsini Taman Bunga Tipe C Cimanggis Depok',
+    'Kost Singgahsini DFlory Tipe B Cinere Depok',
+    'Kost Rumah Nimas Sawangan Depok',
+  ];
+  const kodeFor = async (name: string) => {
+    const idx = CASE_STUDY_ORDER.indexOf(name)
+    if (idx >= 0) return `A0${idx + 1}`
+    return nextKode()
+  };
+
   for (const kec of kecamatans) {
     for (let i = 0; i < 6; i++) {
       const namePrefix = names[i % names.length];
@@ -244,7 +212,9 @@ async function main() {
 
   for (const k of kosData) {
     const slug = k.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString().slice(-5)
-    
+    const { panjang, lebar } = parseRoomSize(k.roomSize)
+    const jarak = calculateDistance(k.latitude, k.longitude, UBSI_MARGONDA_COORDS.lat, UBSI_MARGONDA_COORDS.lng) / 1000
+
     const createdKos = await prisma.kos.create({
       data: {
         name: k.name,
@@ -261,6 +231,12 @@ async function main() {
         rating: k.rating,
         latitude: k.latitude,
         longitude: k.longitude,
+        kode: await kodeFor(k.name),
+        jarakKm: parseFloat(jarak.toFixed(3)),
+        panjangM: panjang || null,
+        lebarM: lebar || null,
+        fasilitasLevel: facilityLevelFromCount(k.facilities.length),
+        fasilitasTeks: k.facilities.join("; "),
       }
     })
 
@@ -288,7 +264,7 @@ async function main() {
     }
   }
 
-  // ─── 5 Alternatif Studi Kasus (data_kost.xlsx, skor eksak di engine) ─────
+  // ─── 5 Alternatif Studi Kasus (data_kost.xlsx, kode A01-A05 modul SPK) ───
   const kecCoords: Record<string, { lat: number; lng: number }> = {
     Cinere: { lat: -6.335, lng: 106.78 },
     Beji: { lat: -6.37, lng: 106.82 },
@@ -297,22 +273,23 @@ async function main() {
   }
 
   const caseStudyKos = [
-    { name: 'Kost Noeks Cinere Depok', price: 1700000, roomSize: '2.5 x 3 meter', kec: 'Cinere', genderType: 'PUTRI', transit: 'Ojol/Motor / Angkot', rating: 1.9, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'Listrik Gratis'] },
-    { name: 'Kost Pondok Rindang Tipe C Beji Depok', price: 1500000, roomSize: '3 x 3 meter', kec: 'Beji', genderType: 'PUTRA', transit: 'Jalan kaki', rating: 3.4, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'Listrik Gratis'] },
-    { name: 'Kost Singgahsini Taman Bunga Tipe C Cimanggis Depok', price: 2000000, roomSize: '3.5 x 3 meter', kec: 'Cimanggis', genderType: 'PUTRI', transit: 'Jalan kaki, ojol/motor, angkot', rating: 4.5, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'WiFi', 'Dapur', 'Penjaga Kos', 'CCTV', 'Listrik Gratis', 'Kursi'] },
-    { name: 'Kost Singgahsini DFlory Tipe B Cinere Depok', price: 2025000, roomSize: '3.7 x 2.7 meter', kec: 'Cinere', genderType: 'PUTRI', transit: 'Ojol/Motor / Angkot', rating: 5.0, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'WiFi', 'Dapur', 'Penjaga Kos', 'CCTV', 'Listrik Gratis'] },
-    { name: 'Kost Rumah Nimas Sawangan Depok', price: 1000000, roomSize: '3 x 4 meter', kec: 'Sawangan', genderType: 'PUTRI', transit: 'Ojol/Motor / Angkot', rating: null as number | null, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kamar Mandi Dalam', 'Parkir Motor', 'WiFi', 'Dapur', 'Penjaga Kos', 'CCTV', 'Listrik Gratis'] },
+    { kode: 'A01', name: 'Kost Noeks Cinere Depok', jarakKm: 9, price: 1700000, roomSize: '2.5 x 3 meter', kec: 'Cinere', genderType: 'PUTRI', transit: 'Ojol/Motor / Angkot', rating: 1.9, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'Listrik Gratis'] },
+    { kode: 'A02', name: 'Kost Pondok Rindang Tipe C Beji Depok', jarakKm: 0.6, price: 1500000, roomSize: '3 x 3 meter', kec: 'Beji', genderType: 'PUTRA', transit: 'Jalan kaki', rating: 3.4, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'Listrik Gratis'] },
+    { kode: 'A03', name: 'Kost Singgahsini Taman Bunga Tipe C Cimanggis Depok', jarakKm: 1.9, price: 2000000, roomSize: '3.5 x 3 meter', kec: 'Cimanggis', genderType: 'PUTRI', transit: 'Jalan kaki, ojol/motor, angkot', rating: 4.5, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'WiFi', 'Dapur', 'Penjaga Kos', 'CCTV', 'Listrik Gratis'] },
+    { kode: 'A04', name: 'Kost Singgahsini DFlory Tipe B Cinere Depok', jarakKm: 7.7, price: 2025000, roomSize: '3.7 x 2.7 meter', kec: 'Cinere', genderType: 'PUTRI', transit: 'Ojol/Motor / Angkot', rating: 5.0, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kursi', 'Kamar Mandi Dalam', 'Parkir Motor', 'WiFi', 'Dapur', 'Penjaga Kos', 'CCTV', 'Listrik Gratis'] },
+    { kode: 'A05', name: 'Kost Rumah Nimas Sawangan Depok', jarakKm: 12.9, price: 1000000, roomSize: '3 x 4 meter', kec: 'Sawangan', genderType: 'PUTRI', transit: 'Ojol/Motor / Angkot', rating: null as number | null, facilities: ['AC', 'Kasur', 'Meja Belajar', 'Lemari', 'Kamar Mandi Dalam', 'Parkir Motor', 'WiFi', 'Dapur', 'Penjaga Kos', 'CCTV', 'Listrik Gratis'] },
   ]
 
   for (const k of caseStudyKos) {
     const coord = kecCoords[k.kec]
     const slug = k.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now().toString().slice(-5)
+    const { panjang, lebar } = parseRoomSize(k.roomSize)
 
     const created = await prisma.kos.create({
       data: {
         name: k.name,
         slug,
-        description: `${k.name} — salah satu alternatif studi kasus perhitungan SAW (data_kost.xlsx).`,
+        description: `${k.name}, alternatif studi kasus perhitungan SAW dari data_kost.xlsx.`,
         price: k.price,
         roomSize: k.roomSize,
         address: `${k.kec}, Depok`,
@@ -322,6 +299,12 @@ async function main() {
         rating: k.rating,
         latitude: coord.lat,
         longitude: coord.lng,
+        kode: k.kode,
+        jarakKm: k.jarakKm,
+        panjangM: panjang || null,
+        lebarM: lebar || null,
+        fasilitasLevel: facilityLevelFromCount([...new Set(k.facilities)].length),
+        fasilitasTeks: [...new Set(k.facilities)].join('; '),
         owner: { connect: { id: seller1.id } },
       }
     })
@@ -386,6 +369,10 @@ async function main() {
   // Recalculate SAW and update rank and finalScore in database before finishing
   await calculateAndUpdateSAWInSeed(prisma);
 
+  // Sinkronkan rating_kecocokan (matriks X modul SPK) untuk semua kos
+  const synced = await syncAllRatingKecocokan()
+  console.log(`✅ Rating kecocokan tersinkron untuk ${synced} kos`)
+
   console.log('')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('📋 Akun tersedia:')
@@ -394,26 +381,6 @@ async function main() {
   console.log('  Seller 2:    seller2@kosrank.com   / seller123')
   console.log('  User:        user@kosrank.com       / user123')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-}
-
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371e3; // metres
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c; // in metres
 }
 
 function parseRoomArea(roomSize: string): number {

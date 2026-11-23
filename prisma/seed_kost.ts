@@ -25,6 +25,12 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import { calculateAndUpdateSAW } from "../src/features/saw/engine";
+import {
+  facilityLevelFromCount,
+  parseRoomSize,
+  syncAllRatingKecocokan,
+} from "../src/features/spk/spk";
+import { DEFAULT_CRITERIA } from "../src/features/spk/default-rubric";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -133,7 +139,8 @@ async function main() {
   const cleaned: Array<{
     name: string; kec: string; price: number; roomSize: string; rating: number | null;
     jarakKm: number; gender: "PUTRA" | "PUTRI" | "CAMPUR"; transit: string;
-    facilities: string[]; lat: number; lng: number;
+    facilities: string[]; facCount: number; fasilitasTeks: string;
+    panjang: number; lebar: number; lat: number; lng: number;
   }> = [];
   let dupCount = 0;
   let skipCount = 0;
@@ -159,6 +166,9 @@ async function main() {
     // Offset deterministik agar titik tidak menumpuk di satu koordinat
     const lat = coord.lat + (((i % 7) - 3) * 0.002);
     const lng = coord.lng + (((i % 5) - 2) * 0.002);
+    const { panjang, lebar } = parseRoomSize(String(row.room_size || ""));
+    const fasilitasTeks = String(row.all_facilities_bs || "").trim();
+    const facCount = fasilitasTeks.split(";").filter((s) => s.trim()).length;
 
     cleaned.push({
       name,
@@ -170,12 +180,32 @@ async function main() {
       gender: mapGender(row.tipe_kos),
       transit: String(row.transport || "").trim() || "Ojek online/kendaraan pribadi",
       facilities: mapFacilities(row.all_facilities_bs),
+      facCount,
+      fasilitasTeks,
+      panjang,
+      lebar,
       lat: parseFloat(lat.toFixed(5)),
       lng: parseFloat(lng.toFixed(5)),
     });
   });
 
   console.log(`🧹 Bersih: ${cleaned.length} kos (duplikat dilewati: ${dupCount}, non-kos dilewati: ${skipCount})`);
+
+  // Kode alternatif: A01-A05 untuk 5 kos studi kasus (sheet SAW), sisanya A06+ urut sheet Depok
+  const CASE_STUDY = [
+    "Kost Noeks Cinere Depok",
+    "Kost Pondok Rindang Tipe C Beji Depok",
+    "Kost Singgahsini Taman Bunga Tipe C Cimanggis Depok",
+    "Kost Singgahsini DFlory Tipe B Cinere Depok",
+    "Kost Rumah Nimas Sawangan Depok",
+  ];
+  let seq = CASE_STUDY.length;
+  const kodeOf = new Map<string, string>();
+  for (const k of cleaned) {
+    const csIdx = CASE_STUDY.indexOf(k.name);
+    if (csIdx >= 0) kodeOf.set(k.name, `A0${csIdx + 1}`);
+    else kodeOf.set(k.name, `A${String(++seq).padStart(3, "0")}`);
+  }
 
   // 3. Wipe data lama (kos cascade ke fasilitas/gambar/booking/chat)
   await prisma.kos.deleteMany();
@@ -206,56 +236,14 @@ async function main() {
   });
   console.log("✅ Users seeded");
 
-  // 5. Kriteria & sub-kriteria (rubrik data_kost.xlsx, sama dengan seed.ts)
-  const criteriaData = [
-    { code: "C1", name: "Harga", weight: 0.3, attribute: "COST" as const },
-    { code: "C2", name: "Fasilitas", weight: 0.3, attribute: "BENEFIT" as const },
-    { code: "C3", name: "Jarak", weight: 0.2, attribute: "COST" as const },
-    { code: "C4", name: "Ukuran Ruangan", weight: 0.1, attribute: "BENEFIT" as const },
-    { code: "C5", name: "Rating", weight: 0.1, attribute: "BENEFIT" as const },
-  ];
-  const subCriteriaData: Record<string, Array<{ name: string; value: string; score: number }>> = {
-    C1: [
-      { name: "500.000 - 999.999", value: "<1000000", score: 100 },
-      { name: "1.000.000 - 1.999.999", value: "<2000000", score: 80 },
-      { name: "2.000.000 - 2.999.999", value: "<3000000", score: 60 },
-      { name: "3.000.000 - 3.999.999", value: "<4000000", score: 40 },
-      { name: "> 4.000.000", value: ">=4000000", score: 20 },
-    ],
-    C2: [
-      { name: "Sangat tidak lengkap (<= 5 fasilitas)", value: "<=5", score: 20 },
-      { name: "Kurang lengkap (6 - 7 fasilitas)", value: "6-7", score: 40 },
-      { name: "Cukup lengkap (8 - 10 fasilitas)", value: "8-10", score: 60 },
-      { name: "Lengkap (11 - 13 fasilitas)", value: "11-13", score: 80 },
-      { name: "Sangat lengkap (>= 14 fasilitas)", value: ">=14", score: 100 },
-    ],
-    C3: [
-      { name: "0 - 1 km", value: "0-1", score: 100 },
-      { name: "1 - 5 km", value: "1-5", score: 80 },
-      { name: "5 - 10 km", value: "5-10", score: 60 },
-      { name: "10 - 15 km", value: "10-15", score: 40 },
-      { name: "> 15 km", value: ">15", score: 20 },
-    ],
-    C4: [
-      { name: "Luas <= 6 m2", value: "<=6", score: 20 },
-      { name: "Luas > 6-9 m2", value: "6-9", score: 40 },
-      { name: "Luas > 9-12 m2", value: "9-12", score: 60 },
-      { name: "Luas > 12-15 m2", value: "12-15", score: 80 },
-      { name: "Luas > 15 m2", value: ">15", score: 100 },
-    ],
-    C5: [
-      { name: "Not found", value: "null", score: 20 },
-      { name: "1 - 2", value: "1-2", score: 40 },
-      { name: "2 - 3", value: "2-3", score: 60 },
-      { name: "3 - 4", value: "3-4", score: 80 },
-      { name: "4 - 5", value: "4-5", score: 100 },
-    ],
-  };
-  for (const c of criteriaData) {
-    const created = await prisma.criteria.create({ data: c });
+  // 5. Kriteria & sub-kriteria (rubrik data_kost.xlsx dari config bersama)
+  for (const c of DEFAULT_CRITERIA) {
+    const created = await prisma.criteria.create({
+      data: { code: c.code, name: c.name, weight: c.weight, attribute: c.attribute },
+    })
     await prisma.subCriteria.createMany({
-      data: subCriteriaData[c.code].map((s) => ({ ...s, criteriaId: created.id })),
-    });
+      data: c.subKriteria.map((s) => ({ ...s, criteriaId: created.id })),
+    })
   }
   console.log("✅ Criteria & Sub-Criteria seeded");
 
@@ -300,6 +288,12 @@ async function main() {
         rating: k.rating,
         latitude: k.lat,
         longitude: k.lng,
+        kode: kodeOf.get(k.name),
+        jarakKm: k.jarakKm,
+        panjangM: k.panjang || null,
+        lebarM: k.lebar || null,
+        fasilitasLevel: facilityLevelFromCount(k.facCount),
+        fasilitasTeks: k.fasilitasTeks,
         owner: { connect: { id: seller1.id } },
       },
     });
@@ -344,6 +338,11 @@ async function main() {
   // 9. Hitung ulang SAW (bobot dari tabel Criteria, skor C2 dari jumlah fasilitas)
   await calculateAndUpdateSAW();
   console.log("✅ Initial SAW ranks and scores saved!");
+
+  // 10. Sinkronkan rating_kecocokan (matriks X modul SPK) untuk semua kos
+  const synced = await syncAllRatingKecocokan();
+  console.log(`✅ Rating kecocokan tersinkron untuk ${synced} kos`);
+
   console.log(`\n🏁 Selesai. Katalog: ${inserted} kos real. Login admin: superadmin@kosrank.com / admin123`);
 }
 

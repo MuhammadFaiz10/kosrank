@@ -17,6 +17,13 @@ export const proxy = auth((req) => {
     return NextResponse.redirect(new URL("/admin", req.url))
   }
 
+  // Modul SPK varian dengan auth (semua role yang sudah login)
+  if (pathname.startsWith("/app")) {
+    if (!req.auth) {
+      return NextResponse.redirect(new URL("/auth/login?from=app", req.url))
+    }
+  }
+
   // User/Customer dashboard
   if (pathname.startsWith("/dashboard")) {
     if (!req.auth) {
@@ -28,5 +35,5 @@ export const proxy = auth((req) => {
 })
 
 export const config = {
-  matcher: ["/admin/:path*", "/seller/:path*", "/dashboard/:path*"],
+  matcher: ["/admin/:path*", "/seller/:path*", "/dashboard/:path*", "/app/:path*"],
 }
